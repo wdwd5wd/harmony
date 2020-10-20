@@ -117,4 +117,13 @@ type Engine interface {
 		incxs []*types.CXReceiptsProof, stks staking.StakingTransactions,
 		doubleSigners slash.Records,
 	) (*types.Block, reward.Reader, error)
+
+	// 我改了
+	FinalizeDIY(
+		chain ChainReader, header *block.Header,
+		state *state.DB, txs []*types.Transaction,
+		receipts []*types.Receipt, outcxs []*types.CXReceipt,
+		incxs []*types.CXReceiptsProof, stks staking.StakingTransactions,
+		doubleSigners slash.Records,
+	) (*types.Block, error)
 }
