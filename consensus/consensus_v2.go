@@ -339,6 +339,8 @@ func (consensus *Consensus) Start(
 				toStart <- struct{}{}
 				consensus.getLogger().Info().Time("time", time.Now()).Msg("[ConsensusMainLoop] Send ReadySignal")
 				consensus.ReadySignal <- struct{}{}
+				// 我改了，初始化发送finishSignal
+				consensus.FinishSignal <- struct{}{}
 			}()
 		}
 		consensus.getLogger().Info().Time("time", time.Now()).Msg("[ConsensusMainLoop] Consensus started")
@@ -398,6 +400,7 @@ func (consensus *Consensus) Start(
 			case newBlock := <-blockChannel:
 				consensus.getLogger().Info().
 					Uint64("MsgBlockNum", newBlock.NumberU64()).
+					Str("Hash:", newBlock.Hash().Hex()).
 					Msg("[ConsensusMainLoop] Received Proposed New Block!")
 
 				//VRF/VDF is only generated in the beacon chain
@@ -477,12 +480,15 @@ func (consensus *Consensus) Start(
 				consensus.msgSender.Reset(newBlock.NumberU64())
 
 				consensus.getLogger().Info().
+					Str("Hash:", newBlock.Hash().Hex()).
 					Int("numTxs", len(newBlock.Transactions())).
 					Int("numStakingTxs", len(newBlock.StakingTransactions())).
 					Time("startTime", startTime).
 					Int64("publicKeys", consensus.Decider.ParticipantsCount()).
 					Msg("[ConsensusMainLoop] STARTING CONSENSUS")
-				consensus.announce(newBlock)
+				// 我改了
+				// consensus.announce(newBlock)
+				consensus.PreannounceDIY(newBlock)
 
 			case viewID := <-consensus.commitFinishChan:
 				consensus.getLogger().Info().Msg("[ConsensusMainLoop] commitFinishChan")
@@ -492,7 +498,9 @@ func (consensus *Consensus) Start(
 					consensus.mutex.Lock()
 					defer consensus.mutex.Unlock()
 					if viewID == consensus.GetCurBlockViewID() {
-						consensus.finalizeCommits()
+						// 我改了
+						consensus.finalizeCommitsDIY()
+						// consensus.finalizeCommits()
 					}
 				}()
 
