@@ -157,7 +157,7 @@ MIN=3
 SHARDS=2
 DRYRUN=
 NETWORK=localnet
-VERBOSE=false
+VERBOSE=true
 NOBUILD=false
 
 while getopts "hD:m:s:nBN:v" option; do
