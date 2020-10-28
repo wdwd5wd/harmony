@@ -31,10 +31,13 @@ const (
 func (ls localnetSchedule) InstanceForEpoch(epoch *big.Int) Instance {
 	switch {
 	case epoch.Cmp(params.LocalnetChainConfig.StakingEpoch) >= 0:
+		// fmt.Fprintf(os.Stdout, "now i am MustNewInstance V2\n")
 		return localnetV2
 	case epoch.Cmp(big.NewInt(localnetV1Epoch)) >= 0:
+		// fmt.Fprintf(os.Stdout, "now i am MustNewInstance V1\n")
 		return localnetV1
 	default: // genesis
+		// fmt.Fprintf(os.Stdout, "now i am MustNewInstance V0\n")
 		return localnetV0
 	}
 }
@@ -118,7 +121,7 @@ var (
 		big.NewInt(0), big.NewInt(localnetV1Epoch), params.LocalnetChainConfig.StakingEpoch,
 	}
 	// Number of shards, how many slots on each , how many slots owned by Harmony
-	localnetV0 = MustNewInstance(2, 7, 5, numeric.OneDec(), genesis.LocalHarmonyAccounts, genesis.LocalFnAccounts, localnetReshardingEpoch, LocalnetSchedule.BlocksPerEpoch())
-	localnetV1 = MustNewInstance(2, 8, 5, numeric.OneDec(), genesis.LocalHarmonyAccountsV1, genesis.LocalFnAccountsV1, localnetReshardingEpoch, LocalnetSchedule.BlocksPerEpoch())
-	localnetV2 = MustNewInstance(2, 9, 6, numeric.MustNewDecFromStr("0.68"), genesis.LocalHarmonyAccountsV2, genesis.LocalFnAccountsV2, localnetReshardingEpoch, LocalnetSchedule.BlocksPerEpoch())
+	localnetV0 = MustNewInstance(3, 4, 3, numeric.OneDec(), genesis.LocalHarmonyAccountsV2, genesis.LocalFnAccountsV2, localnetReshardingEpoch, LocalnetSchedule.BlocksPerEpoch())
+	localnetV1 = MustNewInstance(3, 5, 3, numeric.OneDec(), genesis.LocalHarmonyAccountsV2, genesis.LocalFnAccountsV2, localnetReshardingEpoch, LocalnetSchedule.BlocksPerEpoch())
+	localnetV2 = MustNewInstance(3, 6, 4, numeric.MustNewDecFromStr("0.68"), genesis.LocalHarmonyAccountsV2, genesis.LocalFnAccountsV2, localnetReshardingEpoch, LocalnetSchedule.BlocksPerEpoch())
 )
