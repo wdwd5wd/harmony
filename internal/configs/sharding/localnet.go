@@ -118,7 +118,8 @@ var (
 		big.NewInt(0), big.NewInt(localnetV1Epoch), params.LocalnetChainConfig.StakingEpoch,
 	}
 	// Number of shards, how many slots on each , how many slots owned by Harmony
-	localnetV0 = MustNewInstance(2, 7, 5, numeric.OneDec(), genesis.LocalHarmonyAccounts, genesis.LocalFnAccounts, localnetReshardingEpoch, LocalnetSchedule.BlocksPerEpoch())
-	localnetV1 = MustNewInstance(2, 8, 5, numeric.OneDec(), genesis.LocalHarmonyAccountsV1, genesis.LocalFnAccountsV1, localnetReshardingEpoch, LocalnetSchedule.BlocksPerEpoch())
-	localnetV2 = MustNewInstance(2, 9, 6, numeric.MustNewDecFromStr("0.68"), genesis.LocalHarmonyAccountsV2, genesis.LocalFnAccountsV2, localnetReshardingEpoch, LocalnetSchedule.BlocksPerEpoch())
+	// 我改了
+	localnetV0 = MustNewInstance(3, 8, 8, numeric.OneDec(), genesis.LocalHarmonyAccountsDIY, genesis.LocalFnAccountsDIY, localnetReshardingEpoch, LocalnetSchedule.BlocksPerEpoch())
+	localnetV1 = MustNewInstance(3, 8, 8, numeric.OneDec(), genesis.LocalHarmonyAccountsV1DIY, genesis.LocalFnAccountsV1DIY, localnetReshardingEpoch, LocalnetSchedule.BlocksPerEpoch())
+	localnetV2 = MustNewInstance(3, 8, 8, numeric.MustNewDecFromStr("0.68"), genesis.LocalHarmonyAccountsV2DIY, genesis.LocalFnAccountsV2DIY, localnetReshardingEpoch, LocalnetSchedule.BlocksPerEpoch())
 )
