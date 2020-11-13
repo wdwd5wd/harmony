@@ -38,7 +38,7 @@ func (consensus *Consensus) PreannounceDIY(newBlock *types.Block) {
 func (consensus *Consensus) AnnounceDIY(block *types.Block) {
 	// 直接让leader生产下一个块
 	// Send signal to Node to propose the new block for consensus
-	consensus.ReadySignal <- struct{}{}
+	// consensus.ReadySignal <- struct{}{}
 
 	blockHash := block.Hash()
 
@@ -336,7 +336,7 @@ func (consensus *Consensus) onCommitDIY(msg *msg_pb.Message) {
 
 		consensus.getLogger().Info().Msg("[OnCommit] Starting Grace Period")
 		go func(viewID uint64) {
-			time.Sleep(2500 * time.Millisecond)
+			time.Sleep(2000 * time.Millisecond)
 			logger.Info().Msg("[OnCommit] Commit Grace Period Ended")
 			consensus.commitFinishChan <- viewID
 		}(viewID)
