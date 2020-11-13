@@ -43,6 +43,7 @@ func (s *PublicPoolService) SendRawTransaction(
 	ctx context.Context, encodedTx hexutil.Bytes,
 ) (common.Hash, error) {
 	// DOS prevention
+	// fmt.Println("Encoded tx size:", len(encodedTx))
 	if len(encodedTx) >= types.MaxEncodedPoolTransactionSize {
 		err := errors.Wrapf(core.ErrOversizedData, "encoded tx size: %d", len(encodedTx))
 		return common.Hash{}, err
@@ -60,11 +61,18 @@ func (s *PublicPoolService) SendRawTransaction(
 		)
 	}
 
+	// 我改了
+	// tx.SetPayload()
+	// fmt.Println("True tx size?", tx.Size())
+
+	// 我改了
 	// Submit transaction
-	if err := s.hmy.SendTx(ctx, tx); err != nil {
-		utils.Logger().Warn().Err(err).Msg("Could not submit transaction")
-		return tx.Hash(), err
-	}
+	go func() {
+		if err := s.hmy.SendTx(ctx, tx); err != nil {
+			utils.Logger().Warn().Err(err).Msg("Could not submit transaction")
+			// return tx.Hash(), err
+		}
+	}()
 
 	// Log submission
 	if tx.To() == nil {
@@ -79,10 +87,11 @@ func (s *PublicPoolService) SendRawTransaction(
 			Str("contract", common2.MustAddressToBech32(addr)).
 			Msg("Submitted contract creation")
 	} else {
-		utils.Logger().Info().
-			Str("fullhash", tx.Hash().Hex()).
-			Str("recipient", tx.To().Hex()).
-			Msg("Submitted transaction")
+		// 我改了
+		// utils.Logger().Info().
+		// 	Str("fullhash", tx.Hash().Hex()).
+		// 	Str("recipient", tx.To().Hex()).
+		// 	Msg("Submitted transaction")
 	}
 
 	// Response output is the same for all versions
