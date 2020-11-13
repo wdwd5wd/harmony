@@ -14,6 +14,10 @@ var LocalHarmonyAccountsDIY = []DeployAccount{
 	{Index: " 9 ", Address: "one1658znfwf40epvy7e46cqrmzyy54h4n0qa73nep", BLSPublicKey: "49d15743b36334399f9985feb0753430a2b287b2d68b84495bbb15381854cbf01bca9d1d9f4c9c8f18509b2bfa6bd40f"},
 	{Index: " 10 ", Address: "one1z05g55zamqzfw9qs432n33gycdmyvs38xjemyl", BLSPublicKey: "95117937cd8c09acd2dfae847d74041a67834ea88662a7cbed1e170350bc329e53db151e5a0ef3e712e35287ae954818"},
 	{Index: " 11 ", Address: "one1ljznytjyn269azvszjlcqvpcj6hjm822yrcp2e", BLSPublicKey: "68ae289d73332872ec8d04ac256ca0f5453c88ad392730c5741b6055bc3ec3d086ab03637713a29f459177aaa8340615"},
+}
+
+// LocalFnAccounts are the accounts for the initial FN used for local test.
+var LocalFnAccountsDIY = []DeployAccount{
 	{Index: " 12 ", Address: "one1a50tun737ulcvwy0yvve0pvu5skq0kjargvhwe", BLSPublicKey: "52ecce5f64db21cbe374c9268188f5d2cdd5bec1a3112276a350349860e35fb81f8cfe447a311e0550d961cf25cb988d"},
 	{Index: " 13 ", Address: "one1uyshu2jgv8w465yc8kkny36thlt2wvel89tcmg", BLSPublicKey: "a547a9bf6fdde4f4934cde21473748861a3cc0fe8bbb5e57225a29f483b05b72531f002f8187675743d819c955a86100"},
 	{Index: " 14 ", Address: "one103q7qe5t2505lypvltkqtddaef5tzfxwsse4z7", BLSPublicKey: "678ec9670899bf6af85b877058bea4fc1301a5a3a376987e826e3ca150b80e3eaadffedad0fedfa111576fa76ded980c"},
@@ -26,10 +30,6 @@ var LocalHarmonyAccountsDIY = []DeployAccount{
 	{Index: " 21 ", Address: "one1p7ht2d4kl8ve7a8jxw746yfnx4wnfxtp8jqxwe", BLSPublicKey: "ca86e551ee42adaaa6477322d7db869d3e203c00d7b86c82ebee629ad79cb6d57b8f3db28336778ec2180e56a8e07296"},
 	{Index: " 22 ", Address: "one1vey2zja6gn0j5pkdh9nplqy5gcux9xx37ne7j2", BLSPublicKey: "b734dc22ee2c9e19927a1b87c80989e23973b1059414a00183db254458ee21bc4adb6cdfdcbdbbc0cd9043cd2b80a990"},
 	{Index: " 23 ", Address: "one1pdv9lrdwl0rg5vglh4xtyrv3wjk3wsqket7zxz", BLSPublicKey: "b179c4fdc0bee7bd0b6698b792837dd13404d3f985b59d4a9b1cd0641a76651e271518b61abbb6fbebd4acf963358604"},
-}
-
-// LocalFnAccounts are the accounts for the initial FN used for local test.
-var LocalFnAccountsDIY = []DeployAccount{
 	// {Index: " 0 ", Address: "one1a50tun737ulcvwy0yvve0pvu5skq0kjargvhwe", BLSPublicKey: "52ecce5f64db21cbe374c9268188f5d2cdd5bec1a3112276a350349860e35fb81f8cfe447a311e0550d961cf25cb988d"},
 	// {Index: " 1 ", Address: "one1uyshu2jgv8w465yc8kkny36thlt2wvel89tcmg", BLSPublicKey: "a547a9bf6fdde4f4934cde21473748861a3cc0fe8bbb5e57225a29f483b05b72531f002f8187675743d819c955a86100"},
 	// {Index: " 2 ", Address: "one103q7qe5t2505lypvltkqtddaef5tzfxwsse4z7", BLSPublicKey: "678ec9670899bf6af85b877058bea4fc1301a5a3a376987e826e3ca150b80e3eaadffedad0fedfa111576fa76ded980c"},
