@@ -39,12 +39,12 @@ function setup() {
     touch "${ROOT}/.hmy/blspass.txt"
   fi
 
-# 如果在非bootnode的机器上，不能省略
   # # Kill nodes if any
   # cleanup
-
-  # # Note that the binarys only works on MacOS & Linux
-  # build
+  
+# 如果在非bootnode的机器上，不能省略
+  # Note that the binarys only works on MacOS & Linux
+  build
 
   # Create a tmp folder for logs
   t=$(date +"%Y%m%d-%H%M%S")
@@ -55,7 +55,7 @@ function setup() {
 
 function launch_bootnode() {
   echo "launching boot node ..."
-  ${DRYRUN} ${ROOT}/bin/bootnode -port 19876 >"${log_folder}"/bootnode.log 2>&1 | tee -a "${LOG_FILE}" &
+  trickle -d 2560 -u 2560 -L 100 ${DRYRUN} ${ROOT}/bin/bootnode -port 19876 >"${log_folder}"/bootnode.log 2>&1 | tee -a "${LOG_FILE}" &
   sleep 1
   BN_MA=$(grep "BN_MA" "${log_folder}"/bootnode.log | awk -F\= ' { print $2 } ')
   echo "bootnode launched." + " $BN_MA"
@@ -72,7 +72,7 @@ function launch_localnet() {
     verbosity=3
   fi
 
-  base_args=(--log_folder "${log_folder}" --min_peers "${MIN}" --bootnodes "/ip4/172.31.12.40/tcp/19876/p2p/Qmc1V6W7BwX8Ugb42Ti8RnXF1rY5PF7nnZ6bKBryCgi6cv" "--network_type=$NETWORK" --blspass file:"${ROOT}/.hmy/blspass.txt" "--dns=false" "--verbosity=${verbosity}")
+  base_args=(--log_folder "${log_folder}" --min_peers "${MIN}" --bootnodes "/ip4/172.31.15.179/tcp/19876/p2p/Qmc1V6W7BwX8Ugb42Ti8RnXF1rY5PF7nnZ6bKBryCgi6cv" "--network_type=$NETWORK" --blspass file:"${ROOT}/.hmy/blspass.txt" "--dns=false" "--verbosity=${verbosity}")
   sleep 2
 
   # Start nodes
@@ -82,7 +82,7 @@ function launch_localnet() {
 
     # Read config for i-th node form config file
     IFS=' ' read -r ip port mode bls_key shard <<<"${line}"
-    args=("${base_args[@]}" --ip "${ip}" --port "${port}" --key "/tmp/${ip}-${port}.key" --db_dir "${ROOT}/db-${ip}-${port}" "--broadcast_invalid_tx=false")
+    args=("${base_args[@]}" --http.ip "${ip}" --port "${port}" --key "/tmp/${ip}-${port}.key" --db_dir "${ROOT}/db-${ip}-${port}" "--broadcast_invalid_tx=false")
     if [[ -z "$ip" || -z "$port" ]]; then
       echo "skip empty node"
       continue
@@ -122,6 +122,7 @@ function launch_localnet() {
     esac
 
     # Start the node
+    # trickle -s -d 2560 -u 2560
     ${DRYRUN} "${ROOT}/bin/harmony" "${args[@]}" "${extra_args[@]}" 2>&1 | tee -a "${LOG_FILE}" &
   done <"${config}"
 }

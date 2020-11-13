@@ -40,8 +40,8 @@ func (s *Service) Init() {
 // Run runs block proposal.
 func (s *Service) Run(stopChan chan struct{}, stoppedChan chan struct{}) {
 	// 我改了
-	s.waitForConsensusReadyDIY(s.readySignal, s.finishSignal, s.stopChan, s.stoppedChan)
-	// s.waitForConsensusReady(s.readySignal, s.stopChan, s.stoppedChan)
+	// s.waitForConsensusReadyDIY(s.readySignal, s.finishSignal, s.stopChan, s.stoppedChan)
+	s.waitForConsensusReady(s.readySignal, s.stopChan, s.stoppedChan)
 }
 
 // StopService stops block proposal service.
