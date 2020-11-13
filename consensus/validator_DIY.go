@@ -35,9 +35,6 @@ func (consensus *Consensus) onAnnounceDIY(msg *msg_pb.Message) {
 		Msg("[OnAnnounce] Announce message Added")
 	consensus.FBFTLog.AddMessage(recvMsg)
 
-	consensus.mutex.Lock()
-	defer consensus.mutex.Unlock()
-
 	consensus.blockHash = recvMsg.BlockHash
 	// we have already added message and block, skip check viewID
 	// and send prepare message if is in ViewChanging mode
@@ -47,6 +44,8 @@ func (consensus *Consensus) onAnnounceDIY(msg *msg_pb.Message) {
 		return
 	}
 
+ViewIDcheck:
+consensus.mutex.Lock()
 	if consensus.checkViewID(recvMsg) != nil {
 		if consensus.current.Mode() == Normal {
 			consensus.getLogger().Debug().
@@ -54,8 +53,16 @@ func (consensus *Consensus) onAnnounceDIY(msg *msg_pb.Message) {
 				Uint64("MsgBlockNum", recvMsg.BlockNum).
 				Msg("[OnAnnounce] ViewID check failed")
 		}
+		consensus.mutex.Unlock()
+		time.Sleep(10 * time.Millisecond)
+		goto ViewIDcheck
 		return
 	}
+	consensus.mutex.Unlock()
+
+	consensus.mutex.Lock()
+	defer consensus.mutex.Unlock()
+
 	consensus.StartFinalityCount()
 	// consensus.prepareDIY()
 
@@ -450,4 +457,8 @@ func (consensus *Consensus) onCommittedDIY(msg *msg_pb.Message) {
 		consensus.getLogger().Debug().Msg("[OnCommitted] Start consensus timer")
 	}
 	consensus.consensusTimeout[timeoutConsensus].Start()
+
+	// consensus.getLogger().Debug().Msg("SEND commitFinishSig")
+	// consensus.commitFinishSig <- struct{}{}
+	// consensus.getLogger().Debug().Msg("SENT commitFinishSig")
 }

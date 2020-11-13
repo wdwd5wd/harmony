@@ -21,7 +21,7 @@ func (node *Node) WaitForConsensusReadyV2DIY(readySignal chan struct{}, finishSi
 		utils.Logger().Debug().
 			Msg("Waiting for Consensus ready")
 		// TODO: make local net start faster
-		time.Sleep(12 * time.Second) // Wait for other nodes to be ready (test-only)
+		time.Sleep(30 * time.Second) // Wait for other nodes to be ready (test-only)
 
 		var bootstrap = 0
 

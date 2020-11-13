@@ -42,6 +42,22 @@ func (consensus *Consensus) HandleMessageUpdateDIY(ctx context.Context, msg *msg
 			return errVerifyMessageSignature
 		}
 		consensus.onAnnounceDIY(msg)
+
+		// for {
+		// 	if msg.GetConsensus().BlockNum == 1 {
+		// 		consensus.onAnnounceDIY(msg)
+		// 		break
+		// 	} else {
+		// 		consensus.getLogger().Debug().Msg("RECEIVING commitFinishSig")
+		// 		select {
+		// 		case <-consensus.commitFinishSig:
+		// 			consensus.getLogger().Debug().Msg("RECEIVED commitFinishSig")
+		// 			consensus.onAnnounceDIY(msg)
+		// 			break
+		// 		}
+		// 	}
+		// }
+
 	// case t == msg_pb.MessageType_PREPARED && intendedForValidator:
 	// 	if !bytes.Equal(senderKey[:], consensus.LeaderPubKey.Bytes[:]) &&
 	// 		consensus.current.Mode() == Normal && !consensus.IgnoreViewIDCheck.IsSet() {
@@ -269,7 +285,8 @@ func (consensus *Consensus) finalizeCommitsDIY() {
 	<-time.After(time.Until(consensus.NextBlockDue))
 
 	// Send signal to Node to propose the new block for consensus
-	consensus.FinishSignal <- struct{}{}
+	// consensus.FinishSignal <- struct{}{}
+	consensus.ReadySignal <- struct{}{}
 
 	// Update time due for next block
 	consensus.NextBlockDue = time.Now().Add(consensus.BlockPeriod)
