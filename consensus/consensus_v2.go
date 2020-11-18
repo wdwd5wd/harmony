@@ -132,14 +132,6 @@ func (consensus *Consensus) finalizeCommits() {
 		return
 	}
 
-	consensus.tryCatchup()
-	if consensus.blockNum-beforeCatchupNum != 1 {
-		consensus.getLogger().Warn().
-			Uint64("beforeCatchupBlockNum", beforeCatchupNum).
-			Msg("[FinalizeCommits] Leader cannot provide the correct block for committed message")
-		return
-	}
-
 	// if leader success finalize the block, send committed message to validators
 	if err := consensus.msgSender.SendWithRetry(
 		block.NumberU64(),
@@ -153,6 +145,15 @@ func (consensus *Consensus) finalizeCommits() {
 			Hex("blockHash", curBlockHash[:]).
 			Uint64("blockNum", consensus.blockNum).
 			Msg("[finalizeCommits] Sent Committed Message")
+	}
+
+	// 我改了，与前面的发送调换了顺序
+	consensus.tryCatchup()
+	if consensus.blockNum-beforeCatchupNum != 1 {
+		consensus.getLogger().Warn().
+			Uint64("beforeCatchupBlockNum", beforeCatchupNum).
+			Msg("[FinalizeCommits] Leader cannot provide the correct block for committed message")
+		return
 	}
 
 	// Dump new block into level db

@@ -145,6 +145,8 @@ func (consensus *Consensus) onPrepared(msg *msg_pb.Message) {
 			Msg("[OnPrepared] Unparseable block header data")
 		return
 	}
+
+	// 我改了
 	// let this handle it own logs
 	if !consensus.onPreparedSanityChecks(&blockObj, recvMsg) {
 		return
