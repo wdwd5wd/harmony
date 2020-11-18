@@ -918,7 +918,8 @@ func (pool *TxPool) add(tx types.PoolTransaction, local bool) (bool, error) {
 	// If the transaction is already known, discard it
 	hash := tx.Hash()
 	if pool.all.Get(hash) != nil {
-		logger.Info().Str("hash", hash.Hex()).Msg("Discarding already known transaction")
+		// 我改了
+		// logger.Info().Str("hash", hash.Hex()).Msg("Discarding already known transaction")
 		return false, errors.WithMessagef(ErrKnownTransaction, "transaction hash %x", hash)
 	}
 	// If the transaction fails basic validation, discard it
@@ -1308,7 +1309,8 @@ func (pool *TxPool) promoteExecutables(accounts []common.Address) {
 			hash := tx.Hash()
 			pool.all.Remove(hash)
 			pool.priced.Removed()
-			logger.Info().Str("hash", hash.Hex()).Msg("Removed old queued transaction")
+			// 我改了
+			// logger.Info().Str("hash", hash.Hex()).Msg("Removed old queued transaction")
 			// Do not report to error sink as old txs are on chain or meaningful error caught elsewhere.
 		}
 		// Drop all transactions that are too costly (low balance or out of gas)

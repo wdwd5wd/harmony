@@ -120,11 +120,11 @@ var (
 	}
 	// Number of shards, how many slots on each , how many slots owned by Harmony
 	// 我改了
-	localnetV0 = MustNewInstance(2, 12, 6, numeric.OneDec(), genesis.LocalHarmonyAccountsDIY, genesis.LocalFnAccountsDIY, localnetReshardingEpoch, LocalnetSchedule.BlocksPerEpoch())
-	localnetV1 = MustNewInstance(2, 12, 6, numeric.OneDec(), genesis.LocalHarmonyAccountsV1DIY, genesis.LocalFnAccountsV1DIY, localnetReshardingEpoch, LocalnetSchedule.BlocksPerEpoch())
-	localnetV2 = MustNewInstance(2, 12, 6, numeric.MustNewDecFromStr("0.68"), genesis.LocalHarmonyAccountsV2DIY, genesis.LocalFnAccountsV2DIY, localnetReshardingEpoch, LocalnetSchedule.BlocksPerEpoch())
+	// localnetV0 = MustNewInstance(2, 12, 6, numeric.OneDec(), genesis.LocalHarmonyAccountsDIY, genesis.LocalFnAccountsDIY, localnetReshardingEpoch, LocalnetSchedule.BlocksPerEpoch())
+	// localnetV1 = MustNewInstance(2, 12, 6, numeric.OneDec(), genesis.LocalHarmonyAccountsV1DIY, genesis.LocalFnAccountsV1DIY, localnetReshardingEpoch, LocalnetSchedule.BlocksPerEpoch())
+	// localnetV2 = MustNewInstance(2, 12, 6, numeric.MustNewDecFromStr("0.68"), genesis.LocalHarmonyAccountsV2DIY, genesis.LocalFnAccountsV2DIY, localnetReshardingEpoch, LocalnetSchedule.BlocksPerEpoch())
 
-	// localnetV0 = MustNewInstance(2, 250, 250, numeric.OneDec(), genesis.LocalHarmonyAccountsDIY2, genesis.LocalFnAccountsDIY2, localnetReshardingEpoch, LocalnetSchedule.BlocksPerEpoch())
-	// localnetV1 = MustNewInstance(2, 250, 250, numeric.OneDec(), genesis.LocalHarmonyAccountsV1DIY2, genesis.LocalFnAccountsV1DIY2, localnetReshardingEpoch, LocalnetSchedule.BlocksPerEpoch())
-	// localnetV2 = MustNewInstance(2, 250, 250, numeric.MustNewDecFromStr("0.68"), genesis.LocalHarmonyAccountsV2DIY2, genesis.LocalFnAccountsV2DIY2, localnetReshardingEpoch, LocalnetSchedule.BlocksPerEpoch())
+	localnetV0 = MustNewInstance(2, 200, 200, numeric.OneDec(), genesis.LocalHarmonyAccountsDIY2, genesis.LocalFnAccountsDIY2, localnetReshardingEpoch, LocalnetSchedule.BlocksPerEpoch())
+	localnetV1 = MustNewInstance(2, 200, 200, numeric.OneDec(), genesis.LocalHarmonyAccountsV1DIY2, genesis.LocalFnAccountsV1DIY2, localnetReshardingEpoch, LocalnetSchedule.BlocksPerEpoch())
+	localnetV2 = MustNewInstance(2, 200, 200, numeric.MustNewDecFromStr("0.68"), genesis.LocalHarmonyAccountsV2DIY2, genesis.LocalFnAccountsV2DIY2, localnetReshardingEpoch, LocalnetSchedule.BlocksPerEpoch())
 )
