@@ -331,8 +331,8 @@ func (consensus *Consensus) UpdateConsensusInformation() Mode {
 	}
 
 	// 我改了
-	consensus.BlockPeriod = 5 * time.Second
-	// consensus.BlockPeriod = 3 * time.Second
+	// consensus.BlockPeriod = 5 * time.Second
+	consensus.BlockPeriod = 10 * time.Second
 
 	isFirstTimeStaking := consensus.ChainReader.Config().IsStaking(nextEpoch) &&
 		len(curHeader.ShardState()) > 0 &&

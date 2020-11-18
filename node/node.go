@@ -49,7 +49,7 @@ import (
 
 // 我改了
 // broadcast多少比交易一起
-const BroadcastBatchSize = 500
+const BroadcastBatchSize = 1000
 
 // broadcast交易计数
 var BroadcastCount = 0
@@ -287,8 +287,8 @@ func (node *Node) AddPendingTransaction(newTx *types.Transaction) error {
 		}
 		if err == nil || node.BroadcastInvalidTx {
 			// 我改了
-			utils.Logger().Info().Str("Hash", newTx.Hash().Hex()).Msg("Broadcasting Tx")
-			node.tryBroadcast(newTx)
+			// utils.Logger().Info().Str("Hash", newTx.Hash().Hex()).Msg("Broadcasting Tx")
+			// node.tryBroadcast(newTx)
 
 			// lock.Lock()
 			// BroadcastCount++
