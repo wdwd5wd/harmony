@@ -17,7 +17,7 @@ RACE=
 TRACEPTR=
 VERBOSE=
 GO_GCFLAGS="all=-c 2"
-DEBUG=false
+DEBUG=true
 STATIC=true
 
 unset -v progdir

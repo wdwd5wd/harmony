@@ -172,10 +172,9 @@ func (node *Node) tryBroadcast(tx *types.Transaction) {
 
 	shardGroupID := nodeconfig.NewGroupIDByShardID(nodeconfig.ShardID(tx.ShardID()))
 	utils.Logger().Info().Str("shardGroupID", string(shardGroupID)).Msg("tryBroadcast")
-
+	// 获得了tx之后如何广播给from shard
 	for attempt := 0; attempt < NumTryBroadCast; attempt++ {
-		if err := node.host.SendMessageToGroups([]nodeconfig.GroupID{shardGroupID},
-			p2p.ConstructMessage(msg)); err != nil && attempt < NumTryBroadCast {
+		if err := node.host.SendMessageToGroups([]nodeconfig.GroupID{shardGroupID}, p2p.ConstructMessage(msg)); err != nil && attempt < NumTryBroadCast {
 			utils.Logger().Error().Int("attempt", attempt).Msg("Error when trying to broadcast tx")
 		} else {
 			break
@@ -275,6 +274,7 @@ func (node *Node) AddPendingTransaction(newTx *types.Transaction) error {
 				break
 			}
 		}
+		// here is reached when adding a crossshard transaction into the blockchain-ly
 		if err == nil || node.BroadcastInvalidTx {
 			utils.Logger().Info().Str("Hash", newTx.Hash().Hex()).Msg("Broadcasting Tx")
 			node.tryBroadcast(newTx)
@@ -300,6 +300,10 @@ func (node *Node) AddPendingReceipts(receipts *types.CXReceiptsProof) {
 	shardID := receipts.Header.ShardID()
 
 	// Sanity checks
+	// 验证了一下这个这个recipt的正确性
+
+	// utils.Logger().Info().
+	// 	Msg("here i stop ValidateCXReceiptsProof")
 
 	if err := node.Blockchain().Validator().ValidateCXReceiptsProof(receipts); err != nil {
 		if !strings.Contains(err.Error(), rawdb.MsgNoShardStateFromDB) {
@@ -615,6 +619,7 @@ func (node *Node) Start() error {
 			Msg("enabled topic validation pubsub messages")
 
 		// register topic validator for each topic
+		//
 		if err := pubsub.RegisterTopicValidator(
 			topicNamed,
 			// this is the validation function called to quickly validate every p2p message
@@ -766,8 +771,9 @@ func (node *Node) Start() error {
 		}()
 
 		semNode := semaphore.NewWeighted(p2p.SetAsideOtherwise)
+		//here MsgChanBuffer is 1024
 		msgChanNode := make(chan validated, MsgChanBuffer)
-
+		//////////////////////////////////////////////////////////
 		// goroutine to handle node messages
 		go func() {
 			for m := range msgChanNode {

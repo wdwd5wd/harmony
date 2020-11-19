@@ -87,7 +87,7 @@ func (p *StateProcessor) Process(
 
 	// Iterate over and process the individual transactions
 	for i, tx := range block.Transactions() {
-		statedb.Prepare(tx.Hash(), block.Hash(), i)
+		statedb.Prepare(tx.Hash(), block.Hash(), i) // set the tx hash
 		receipt, cxReceipt, _, err := ApplyTransaction(
 			p.config, p.bc, &beneficiary, gp, statedb, header, tx, usedGas, cfg,
 		)
@@ -117,6 +117,8 @@ func (p *StateProcessor) Process(
 	// incomingReceipts should always be processed
 	// after transactions (to be consistent with the block proposal)
 	for _, cx := range block.IncomingReceipts() {
+		utils.Logger().Info().Interface("receipt", cx).
+			Msgf("before adding the balance i am here~~ 119")
 		if err := ApplyIncomingReceipt(
 			p.config, statedb, header, cx,
 		); err != nil {

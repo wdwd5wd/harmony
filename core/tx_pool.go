@@ -905,6 +905,8 @@ func (pool *TxPool) pendingEpoch() *big.Int {
 // the pool due to pricing constraints.
 func (pool *TxPool) add(tx types.PoolTransaction, local bool) (bool, error) {
 	logger := utils.Logger().With().Stack().Logger()
+	
+	logger.Info().Str("Lyn","add_Tx").Msg("i am fking to add transaction now !!")
 	// If the transaction is in the error sink, remove it as it may succeed
 	if pool.txErrorSink.Contains(tx.Hash().String()) {
 		pool.txErrorSink.Remove(tx)
@@ -991,11 +993,14 @@ func (pool *TxPool) add(tx types.PoolTransaction, local bool) (bool, error) {
 		return old != nil, nil
 	}
 	// New transaction isn't replacing a pending one, push into queue
+	// break point 1
+	logger.Info().Str("Lyn","break point 1").Msg("i am fking to add transaction now !!")
 	replace, err := pool.enqueueTx(tx)
 	if err != nil {
 		return false, err
 	}
 	// Mark local addresses and journal local transactions
+	logger.Info().Str("Lyn","break point 1").Msg("Mark local addresses and journal local transactions")
 	if local {
 		if !pool.locals.contains(from) {
 			utils.Logger().Info().Interface("address", from).Msg("Setting new local account")
@@ -1005,6 +1010,7 @@ func (pool *TxPool) add(tx types.PoolTransaction, local bool) (bool, error) {
 	pool.journalTx(from, tx)
 
 	// Set or refresh beat for account timeout eviction
+	logger.Info().Str("Lyn","break point 1").Msg("Set or refresh beat for account timeout eviction")
 	pool.beats[from] = time.Now()
 
 	logger.Info().

@@ -53,7 +53,7 @@ var LocalHarmonyAccountsV2 = []DeployAccount{
 	{Index: " 2 ", Address: "one12fuf7x9rgtdgqg7vgq0962c556m3p7afsxgvll", BLSPublicKey: "02c8ff0b88f313717bc3a627d2f8bb172ba3ad3bb9ba3ecb8eed4b7c878653d3d4faf769876c528b73f343967f74a917"},
 	{Index: " 3 ", Address: "one16qsd5ant9v94jrs89mruzx62h7ekcfxmduh2rx", BLSPublicKey: "ee2474f93cba9241562efc7475ac2721ab0899edf8f7f115a656c0c1f9ef8203add678064878d174bb478fa2e6630502"},
 	{Index: " 4 ", Address: "one1pf75h0t4am90z8uv3y0dgunfqp4lj8wr3t5rsp", BLSPublicKey: "e751ec995defe4931273aaebcb2cd14bf37e629c554a57d3f334c37881a34a6188a93e76113c55ef3481da23b7d7ab09"},
-	{Index: " 5 ", Address: "one1est2gxcvavmtnzc7mhd73gzadm3xxcv5zczdtw", BLSPublicKey: "776f3b8704f4e1092a302a60e84f81e476c212d6f458092b696df420ea19ff84a6179e8e23d090b9297dc041600bc100"},
+	{Index: " 5 ", Address: "one1est2gxcvavmtnzc7mhd73gzadm3xxcv5zczdtw", BLSPublicKey: "a3008c170f403406bdec81300c317b8112e7489b02e9a932fb93dcb0a41da33564b8f03ac47013f7626bf56250bbdd15"},
 	{Index: " 6 ", Address: "one1spshr72utf6rwxseaz339j09ed8p6f8ke370zj", BLSPublicKey: "2d61379e44a772e5757e27ee2b3874254f56073e6bd226eb8b160371cc3c18b8c4977bd3dcb71fd57dc62bf0e143fd08"},
 	{Index: " 7 ", Address: "one1a0x3d6xpmr6f8wsyaxd9v36pytvp48zckswvv9", BLSPublicKey: "c4e4708b6cf2a2ceeb59981677e9821eebafc5cf483fb5364a28fa604cc0ce69beeed40f3f03815c9e196fdaec5f1097"},
 	{Index: " 8 ", Address: "one1d2rngmem4x2c6zxsjjz29dlah0jzkr0k2n88wc", BLSPublicKey: "86dc2fdc2ceec18f6923b99fd86a68405c132e1005cf1df72dca75db0adfaeb53d201d66af37916d61f079f34f21fb96"},

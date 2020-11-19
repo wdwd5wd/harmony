@@ -66,6 +66,7 @@ func (w *Worker) CommitTransactions(
 	txs := types.NewTransactionsByPriceAndNonce(w.current.signer, pendingNormal)
 	// NORMAL
 	for {
+		utils.Logger().Info().Msg("this is CommitTransactions for normal heihei")
 		// If we don't have enough gas for any further transactions then we're done
 		if w.current.gasPool.Gas() < params.TxGas {
 			utils.Logger().Info().Uint64("have", w.current.gasPool.Gas()).Uint64("want", params.TxGas).Msg("Not enough gas for further transactions")
@@ -251,6 +252,8 @@ func (w *Worker) CommitReceipts(receiptsList []*types.CXReceiptsProof) error {
 	}
 
 	for _, cx := range receiptsList {
+		utils.Logger().Info().Interface("receipt", cx).
+			Msgf("before adding the balance i am here~~ 252")
 		if err := core.ApplyIncomingReceipt(
 			w.config, w.current.state, w.current.header, cx,
 		); err != nil {
@@ -490,6 +493,12 @@ func (w *Worker) FinalizeNewBlock(
 			return nil, err
 		}
 	}
+	// try to add two fields into the block, first is txshash, second is roothashes
+
+	// txhashes := []common.Hash{{1}, {2}, {3}, {4}}
+	// w.current.header.SetReceiptHashes(txhashes)
+	utils.Logger().Info().
+		Msg("here is func FinalizeNewBlock")
 	state := w.current.state.Copy()
 	copyHeader := types.CopyHeader(w.current.header)
 	block, _, err := w.engine.Finalize(

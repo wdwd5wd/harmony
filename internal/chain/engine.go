@@ -94,7 +94,7 @@ func (e *engineImpl) VerifyShardState(
 			"[VerifyShardState] shardID not match %d %d", bc.ShardID(), header.ShardID(),
 		)
 	}
-	headerShardStateBytes := header.ShardState()
+	headerShardStateBytes := header.ShardState() // ??????????
 	// TODO: figure out leader withhold shardState
 	if len(headerShardStateBytes) == 0 {
 		return nil
@@ -266,6 +266,8 @@ func (e *engineImpl) Finalize(
 
 	// Finalize the state root
 	header.SetRoot(state.IntermediateRoot(chain.Config().IsS3(header.Epoch())))
+
+	utils.Logger().Info().Msg("here engine.go 270 tate.IntermediateRoot")
 	return types.NewBlock(header, txs, receipts, outcxs, incxs, stks), payout, nil
 }
 

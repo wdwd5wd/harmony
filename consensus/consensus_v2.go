@@ -66,6 +66,7 @@ func (consensus *Consensus) HandleMessageUpdate(ctx context.Context, msg *msg_pb
 		if !consensus.senderKeySanityChecks(msg, senderKey) {
 			return errVerifyMessageSignature
 		}
+		// here will on prepare linyer
 		consensus.onPrepared(msg)
 	case t == msg_pb.MessageType_COMMITTED && intendedForValidator:
 		if !bytes.Equal(senderKey[:], consensus.LeaderPubKey.Bytes[:]) &&

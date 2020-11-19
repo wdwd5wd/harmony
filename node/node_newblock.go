@@ -48,6 +48,7 @@ func (node *Node) WaitForConsensusReadyV2(readySignal chan struct{}, stopChan ch
 						Msg("PROPOSING NEW BLOCK ------------------------------------------------")
 
 					node.Consensus.StartFinalityCount()
+					// this is new block ??
 					newBlock, err := node.proposeNewBlock()
 					if err != nil {
 						utils.Logger().Err(err).Msg("!!!!!!!!!Failed Proposing New Block!!!!!!!!!")
@@ -254,6 +255,8 @@ func (node *Node) proposeReceiptsProof() []*types.CXReceiptsProof {
 	pendingCXReceipts := []*types.CXReceiptsProof{}
 	for _, v := range node.pendingCXReceipts {
 		pendingCXReceipts = append(pendingCXReceipts, v)
+		// tmp log linyer
+		// utils.Logger().Info().Msg("[proposeNewBlock] here i got a pendingCXReceipts")
 	}
 
 	sort.SliceStable(pendingCXReceipts, func(i, j int) bool {

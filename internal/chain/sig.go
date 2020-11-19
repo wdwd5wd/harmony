@@ -34,8 +34,11 @@ func ReadSignatureBitmapByPublicKeys(recvPayload []byte, publicKeys []bls.Public
 		utils.Logger().Warn().Err(err).Msg("onNewView unable to setup mask for prepared message")
 		return nil, nil, errors.New("unable to setup mask from payload")
 	}
+	// utils.Logger().Warn().Msg("here the mask setmash is working——：")
 	if err := mask.SetMask(bitmap); err != nil {
 		utils.Logger().Warn().Err(err).Msg("mask.SetMask failed")
 	}
+
+	// utils.Logger().Warn().Msg("here the mask setmash is working fine!!")
 	return &aggSig, mask, nil
 }

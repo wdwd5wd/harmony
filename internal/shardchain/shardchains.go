@@ -83,6 +83,7 @@ func (sc *CollectionImpl) ShardChain(shardID uint32) (*core.BlockChain, error) {
 		utils.Logger().Info().
 			Uint32("shardID", shardID).
 			Msg("initializing a new chain database")
+		// for shard 2 here is a bug
 		if err := sc.dbInit.InitChainDB(db, shardID); err != nil {
 			return nil, errors.Wrapf(err, "cannot initialize a new chain database")
 		}

@@ -145,12 +145,16 @@ func (consensus *Consensus) onPreparedSanityChecks(
 				Msg("[OnPrepared] Block header is not verified successfully")
 			return false
 		}
+		consensus.getLogger().Info().
+			Msg("xixi")
 		if consensus.BlockVerifier == nil {
 			// do nothing
 		} else if err := consensus.BlockVerifier(blockObj); err != nil {
 			consensus.getLogger().Error().Err(err).Msg("[OnPrepared] Block verification failed")
 			return false
 		}
+		consensus.getLogger().Info().
+			Msg("haha")
 	}
 
 	return true

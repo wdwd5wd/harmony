@@ -105,7 +105,7 @@ func (consensus *Consensus) onPrepared(msg *msg_pb.Message) {
 		Uint64("MsgBlockNum", recvMsg.BlockNum).
 		Uint64("MsgViewID", recvMsg.ViewID).
 		Msg("[OnPrepared] Received prepared message")
-
+	//after here in somewhere   the account is added
 	if recvMsg.BlockNum < consensus.blockNum {
 		consensus.getLogger().Debug().Uint64("MsgBlockNum", recvMsg.BlockNum).
 			Msg("Wrong BlockNum Received, ignoring!")
@@ -125,7 +125,7 @@ func (consensus *Consensus) onPrepared(msg *msg_pb.Message) {
 			Msgf("[OnPrepared] Quorum Not achieved")
 		return
 	}
-
+	//验证是不是这个人发的sign
 	if !aggSig.VerifyHash(mask.AggregatePublic, blockHash[:]) {
 		myBlockHash := common.Hash{}
 		myBlockHash.SetBytes(consensus.blockHash[:])
@@ -146,9 +146,13 @@ func (consensus *Consensus) onPrepared(msg *msg_pb.Message) {
 		return
 	}
 	// let this handle it own logs
+	consensus.getLogger().Info().
+		Msg("wuhu")
 	if !consensus.onPreparedSanityChecks(&blockObj, recvMsg) {
 		return
 	}
+	consensus.getLogger().Info().
+		Msg("oho")
 	consensus.mutex.Lock()
 	defer consensus.mutex.Unlock()
 

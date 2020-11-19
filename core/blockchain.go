@@ -265,6 +265,8 @@ func (bc *BlockChain) ValidateNewBlock(block *types.Block) error {
 
 	// NOTE Order of mutating state here matters.
 	// Process block using the parent state as reference point.
+	utils.Logger().Info().
+		Msgf("here  is 269~~~")
 	receipts, cxReceipts, _, usedGas, _, err := bc.processor.Process(
 		block, state, bc.vmConfig,
 	)
@@ -1446,6 +1448,8 @@ func (bc *BlockChain) insertChain(chain types.Blocks, verifyHeaders bool) (int, 
 		}
 
 		// Process block using the parent state as reference point.
+		utils.Logger().Info().
+			Msgf("here  is 1452~~~")
 		receipts, cxReceipts, logs, usedGas, payout, err := bc.processor.Process(
 			block, state, bc.vmConfig,
 		)
@@ -2247,7 +2251,7 @@ func (bc *BlockChain) CXMerkleProof(toShardID uint32, block *types.Block) (*type
 	epoch := block.Header().Epoch()
 	shardingConfig := shard.Schedule.InstanceForEpoch(epoch)
 	shardNum := int(shardingConfig.NumShards())
-
+	//读取所有的receipts
 	for i := 0; i < shardNum; i++ {
 		receipts, err := bc.ReadCXReceipts(uint32(i), block.NumberU64(), block.Hash())
 		if err != nil || len(receipts) == 0 {

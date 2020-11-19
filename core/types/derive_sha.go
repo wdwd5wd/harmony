@@ -57,6 +57,25 @@ func DeriveSha(list ...DerivableBase) common.Hash {
 	return trie.Hash()
 }
 
+// // DeriveShaReceipt calculates the hash of one single Receipt
+// func DeriveShaReceipt(inputRece Receipt) common.Hash {
+// 	keybuf := new(bytes.Buffer)
+// 	trie := new(trie.Trie)
+// 	var num uint
+// 	tmpReceipts := make([]*Receipt, 0, 2)
+// 	tmpReceipts = append(tmpReceipts, &inputRece)
+// 	realReceipts := CXReceipts(tmpReceipts)
+// 	// for j := range list {
+// 	// for i := 0; i < list[j].Len(); i++ {
+// 	keybuf.Reset()
+// 	rlp.Encode(keybuf, num)
+// 	trie.Update(keybuf.Bytes(), realReceipts.GetRlp(i))
+// 	num++
+// 	// }
+// 	// }
+// 	return trie.Hash()
+// }
+
 //// Legacy forked logic. Keep as is, but do not use it anymore ->
 
 // DeriveOneShardSha calculates the hash of the trie of

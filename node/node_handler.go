@@ -89,6 +89,13 @@ func (node *Node) HandleNodeMessage(
 			proto_node.SlashCandidate,
 			proto_node.Receipt,
 			proto_node.CrossLink:
+			if blockMsgType == proto_node.Receipt {
+				utils.Logger().Info().
+					Msgf("this is a Receipt heihei ")
+			} else {
+				utils.Logger().Info().
+					Msgf("this is a not Receipt wuwu ")
+			}
 			// skip first byte which is blockMsgType
 			node.processSkippedMsgTypeByteValue(blockMsgType, msgPayload[1:])
 		}
@@ -266,7 +273,7 @@ func (node *Node) VerifyNewBlock(newBlock *types.Block) error {
 			Msg("[VerifyNewBlock] Wrong shard ID of the new block")
 		return errors.New("[VerifyNewBlock] Wrong shard ID of the new block")
 	}
-
+	// here will check the beacon chain !!
 	if err := node.Blockchain().Engine().VerifyShardState(
 		node.Blockchain(), node.Beaconchain(), newBlock.Header(),
 	); err != nil {
@@ -279,6 +286,7 @@ func (node *Node) VerifyNewBlock(newBlock *types.Block) error {
 		)
 	}
 
+	// here validate the new block and then will process and add account
 	if err := node.Blockchain().ValidateNewBlock(newBlock); err != nil {
 		if hooks := node.NodeConfig.WebHooks.Hooks; hooks != nil {
 			if p := hooks.ProtocolIssues; p != nil {
