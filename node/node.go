@@ -659,9 +659,11 @@ func (node *Node) Start() error {
 
 					msg.ValidatorData = validated{
 						consensusBound: true,
-						handleC:        node.Consensus.HandleMessageUpdate,
-						handleCArg:     validMsg,
-						senderPubKey:   senderPubKey,
+						// 我改了
+						handleC: node.Consensus.HandleMessageUpdateDIY,
+						// handleC:      node.Consensus.HandleMessageUpdate,
+						handleCArg:   validMsg,
+						senderPubKey: senderPubKey,
 					}
 					return libp2p_pubsub.ValidationAccept
 

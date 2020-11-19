@@ -59,4 +59,9 @@ type Processor interface {
 		types.Receipts, types.CXReceipts,
 		[]*types.Log, uint64, reward.Reader, error,
 	)
+
+	ProcessDIY(block *types.Block, statedb *state.DB, cfg vm.Config) (
+		types.Receipts, types.CXReceipts,
+		[]*types.Log, uint64, error,
+	)
 }
