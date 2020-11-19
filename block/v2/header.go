@@ -42,20 +42,24 @@ func NewHeader() *Header {
 }
 
 type headerFields struct {
-	ParentHash          common.Hash    `json:"parentHash"       gencodec:"required"`
-	Coinbase            common.Address `json:"miner"            gencodec:"required"`
-	Root                common.Hash    `json:"stateRoot"        gencodec:"required"`
-	TxHash              common.Hash    `json:"transactionsRoot" gencodec:"required"`
-	ReceiptHash         common.Hash    `json:"receiptsRoot"     gencodec:"required"`
-	OutgoingReceiptHash common.Hash    `json:"outgoingReceiptsRoot"     gencodec:"required"`
-	IncomingReceiptHash common.Hash    `json:"incomingReceiptsRoot" gencodec:"required"`
-	Bloom               ethtypes.Bloom `json:"logsBloom"        gencodec:"required"`
-	Number              *big.Int       `json:"number"           gencodec:"required"`
-	GasLimit            uint64         `json:"gasLimit"         gencodec:"required"`
-	GasUsed             uint64         `json:"gasUsed"          gencodec:"required"`
-	Time                *big.Int       `json:"timestamp"        gencodec:"required"`
-	Extra               []byte         `json:"extraData"        gencodec:"required"`
-	MixDigest           common.Hash    `json:"mixHash"          gencodec:"required"`
+	ParentHash             common.Hash    `json:"parentHash"       gencodec:"required"`
+	Coinbase               common.Address `json:"miner"            gencodec:"required"`
+	Root                   common.Hash    `json:"stateRoot"        gencodec:"required"`
+	TxHash                 common.Hash    `json:"transactionsRoot" gencodec:"required"`
+	ReceiptHash            common.Hash    `json:"receiptsRoot"     gencodec:"required"`
+	OutgoingReceiptHash    common.Hash    `json:"outgoingReceiptsRoot"     gencodec:"required"`
+	IncomingReceiptHash    common.Hash    `json:"incomingReceiptsRoot" gencodec:"required"`
+	Bloom                  ethtypes.Bloom `json:"logsBloom"        gencodec:"required"`
+	Number                 *big.Int       `json:"number"           gencodec:"required"`
+	GasLimit               uint64         `json:"gasLimit"         gencodec:"required"`
+	GasUsed                uint64         `json:"gasUsed"          gencodec:"required"`
+	Time                   *big.Int       `json:"timestamp"        gencodec:"required"`
+	Extra                  []byte         `json:"extraData"        gencodec:"required"`
+	MixDigest              common.Hash    `json:"mixHash"          gencodec:"required"`
+	ReceiptHashDetail      []common.Hash  `json:"receiptHashforEveryOutgoingtxs"     gencodec:"required"`
+	ReceipttoShardIDDetail []uint32       `json:"shardIDofReceiptHashforEveryOutgoingtxs"     gencodec:"required"`
+	ReceiptHashtoShard     []common.Hash  `json:"receiptHashRootforOneShard"     gencodec:"required"`
+	ReceipttoShardID       []uint32       `json:"shardIDofReceiptHashRoot"     gencodec:"required"`
 	// Additional Fields
 	ViewID              *big.Int    `json:"viewID"           gencodec:"required"`
 	Epoch               *big.Int    `json:"epoch"            gencodec:"required"`
@@ -68,6 +72,50 @@ type headerFields struct {
 	ShardState          []byte      `json:"shardState"`
 	CrossLinks          []byte      `json:"crossLink"`
 }
+
+/////////modified from
+
+// ReceiptHashDetail is all the outgoing txs in the block
+func (h *Header) ReceiptHashDetail() []common.Hash {
+	return h.fields.ReceiptHashDetail
+}
+
+// SetReceiptHashDetail sets the outgoing txs in the block
+func (h *Header) SetReceiptHashDetail(newReceiptHash []common.Hash) {
+	h.fields.ReceiptHashDetail = newReceiptHash
+}
+
+// ReceiptHashtoShard is root of outgoing txs to each shard
+func (h *Header) ReceiptHashtoShard() []common.Hash {
+	return h.fields.ReceiptHashtoShard
+}
+
+// SetReceiptHashtoShard sets root of outgoing txs to each shard
+func (h *Header) SetReceiptHashtoShard(newReceiptHash []common.Hash) {
+	h.fields.ReceiptHashtoShard = newReceiptHash
+}
+
+// ReceipttoShardID asdas
+func (h *Header) ReceipttoShardID() []uint32 {
+	return h.fields.ReceipttoShardID
+}
+
+// SetReceipttoShardID sets the same-shard transaction receipt trie hash.
+func (h *Header) SetReceipttoShardID(shardID []uint32) {
+	h.fields.ReceipttoShardID = shardID
+}
+
+// ReceipttoShardIDDetail return the toshard id of each outgoingtxs
+func (h *Header) ReceipttoShardIDDetail() []uint32 {
+	return h.fields.ReceipttoShardIDDetail
+}
+
+// SetReceipttoShardIDDetail sets the toshard id of each outgoingtxs
+func (h *Header) SetReceipttoShardIDDetail(shardID []uint32) {
+	h.fields.ReceipttoShardIDDetail = shardID
+}
+
+/////////modified stop
 
 // ParentHash is the header hash of the parent block.  For the genesis block
 // which has no parent by definition, this field is zeroed out.
