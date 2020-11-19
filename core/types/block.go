@@ -28,16 +28,22 @@ import (
 	"sync/atomic"
 	"time"
 
+	"bytes"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/core/types"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/ethereum/go-ethereum/trie"
 	"github.com/harmony-one/harmony/block"
 	blockfactory "github.com/harmony-one/harmony/block/factory"
 	v0 "github.com/harmony-one/harmony/block/v0"
 	v1 "github.com/harmony-one/harmony/block/v1"
 	v2 "github.com/harmony-one/harmony/block/v2"
 	v3 "github.com/harmony-one/harmony/block/v3"
+
+	// "github.com/harmony-one/harmony/core/types"
 	"github.com/harmony-one/harmony/crypto/hash"
 	"github.com/harmony-one/harmony/internal/utils"
 	staking "github.com/harmony-one/harmony/staking/types"
@@ -355,8 +361,43 @@ func NewBlock(
 		b.header.SetReceiptHash(DeriveSha(Receipts(receipts)))
 		b.header.SetBloom(CreateBloom(receipts))
 	}
+	/////modified from
+	// put addition info into the block
+	var tmpCXReceipts = CXReceipts(outcxs)
+	ShardIDs := make([]uint32, 0, 2)
+	CXShardHashes := make([]common.Hash, 0, 2)
+	ShardIDsDetail := make([]uint32, 0, 2)
+	CXShardHashesDetail := make([]common.Hash, 0, 2)
+	for i := 0; i <= int(tmpCXReceipts.MaxToShardID()); i++ {
+		shardReceipts := tmpCXReceipts.GetToShardReceipts(uint32(i))
+		// put the root
+		if len(shardReceipts) != 0 {
+			hash := types.DeriveSha(shardReceipts)
+			CXShardHashes = append(CXShardHashes, hash)
+			ShardIDs = append(ShardIDs, uint32(i))
+		}
+		// put the detail hash
+		if len(shardReceipts) != 0 {
+			for _, value := range shardReceipts {
+				keybuf := new(bytes.Buffer)
+				trie := new(trie.Trie)
+				keybuf.Reset()
+				rlp.Encode(keybuf, uint(i))
+				enc, _ := rlp.EncodeToBytes(value)
+				trie.Update(keybuf.Bytes(), enc)
+				hash := trie.Hash()
+				CXShardHashesDetail = append(CXShardHashesDetail, hash)
+				ShardIDsDetail = append(ShardIDsDetail, uint32(i))
+			}
+		}
+	}
 
-	// Put cross-shard receipts (ingres/egress) into block
+	b.header.SetReceiptHashDetail(CXShardHashes)
+	b.header.SetReceipttoShardID(ShardIDs)
+
+	b.header.SetReceiptHashDetail(CXShardHashesDetail)
+	b.header.SetReceipttoShardIDDetail(ShardIDsDetail)
+	/////modified stop
 	b.header.SetOutgoingReceiptHash(CXReceipts(outcxs).ComputeMerkleRoot())
 	if len(incxs) == 0 {
 		b.header.SetIncomingReceiptHash(EmptyRootHash)
