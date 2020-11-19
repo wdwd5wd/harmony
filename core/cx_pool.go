@@ -8,7 +8,9 @@ import (
 
 const (
 	// CxPoolSize is the maximum size of the pool
-	CxPoolSize = 50
+	// 我改了
+	CxPoolSize = 1000000
+	// CxPoolSize = 50
 )
 
 // CxEntry represents the egress receipt's blockHash and ToShardID

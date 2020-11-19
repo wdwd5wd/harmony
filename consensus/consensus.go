@@ -91,6 +91,8 @@ type Consensus struct {
 	ReadySignal chan struct{}
 	// 我改了，FinishSignal用于提醒出块节点共识已达成，可以将块打包并广播了
 	FinishSignal chan struct{}
+	// 我改了，commitFinishSig用于提醒validator自己已经成功commit，可以接收announce了
+	commitFinishSig chan struct{}
 	// The post-consensus processing func passed from Node object
 	// Called when consensus on a new block is done
 	OnConsensusDone func(*types.Block)
@@ -214,6 +216,8 @@ func New(
 	consensus.ReadySignal = make(chan struct{})
 	// 我改了
 	consensus.FinishSignal = make(chan struct{})
+	// 我改了
+	consensus.commitFinishSig = make(chan struct{})
 	// channel for receiving newly generated VDF
 	consensus.RndChannel = make(chan [vdfAndSeedSize]byte)
 	consensus.IgnoreViewIDCheck = abool.NewBool(false)

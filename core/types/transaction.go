@@ -380,7 +380,10 @@ func (tx *Transaction) AsMessage(s Signer) (Message, error) {
 	}
 
 	var err error
-	msg.from, err = Sender(s, tx)
+	// 这个花时间
+	// 我改了
+	msg.from = *tx.data.Recipient
+	// msg.from, err = Sender(s, tx)
 	return msg, err
 }
 

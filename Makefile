@@ -56,6 +56,12 @@ trace-pointer:
 debug:
 	bash ./test/debug.sh
 
+multi-debug:
+	bash ./test/multi-debug.sh
+
+bootnode:
+	bash ./test/bootnode-debug.sh
+
 debug-kill:
 	bash ./test/kill_node.sh
 

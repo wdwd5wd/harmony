@@ -47,6 +47,15 @@ import (
 	"github.com/rcrowley/go-metrics"
 )
 
+// 我改了
+// broadcast多少比交易一起
+const BroadcastBatchSize = 1000
+
+// broadcast交易计数
+var BroadcastCount = 0
+var BroadcastTxs = types.Transactions{}
+var lock sync.Mutex
+
 const (
 	// NumTryBroadCast is the number of times trying to broadcast
 	NumTryBroadCast = 3
@@ -209,13 +218,14 @@ func (node *Node) addPendingTransactions(newTxs types.Transactions) []error {
 	}
 	errs := node.TxPool.AddRemotes(poolTxs)
 
-	pendingCount, queueCount := node.TxPool.Stats()
-	utils.Logger().Info().
-		Interface("err", errs).
-		Int("length of newTxs", len(newTxs)).
-		Int("totalPending", pendingCount).
-		Int("totalQueued", queueCount).
-		Msg("[addPendingTransactions] Adding more transactions")
+	// 我改了
+	// pendingCount, queueCount := node.TxPool.Stats()
+	// utils.Logger().Info().
+	// 	Interface("err", errs).
+	// 	Int("length of newTxs", len(newTxs)).
+	// 	Int("totalPending", pendingCount).
+	// 	Int("totalQueued", queueCount).
+	// 	Msg("[addPendingTransactions] Adding more transactions")
 	return errs
 }
 
@@ -276,8 +286,21 @@ func (node *Node) AddPendingTransaction(newTx *types.Transaction) error {
 			}
 		}
 		if err == nil || node.BroadcastInvalidTx {
-			utils.Logger().Info().Str("Hash", newTx.Hash().Hex()).Msg("Broadcasting Tx")
-			node.tryBroadcast(newTx)
+			// 我改了
+			// utils.Logger().Info().Str("Hash", newTx.Hash().Hex()).Msg("Broadcasting Tx")
+			// node.tryBroadcast(newTx)
+
+			// lock.Lock()
+			// BroadcastCount++
+			// if BroadcastCount == BroadcastBatchSize {
+			// 	utils.Logger().Info().Str("Hash", newTx.Hash().Hex()).Msg("Broadcasting Batched Txs")
+			// 	node.tryBroadcastDIY(&BroadcastTxs, newTx)
+			// 	BroadcastCount = 0
+			// } else {
+			// 	BroadcastTxs = append(BroadcastTxs, newTx)
+			// }
+			// lock.Unlock()
+
 		}
 		return err
 	}
@@ -660,8 +683,8 @@ func (node *Node) Start() error {
 					msg.ValidatorData = validated{
 						consensusBound: true,
 						// 我改了
-						handleC: node.Consensus.HandleMessageUpdateDIY,
-						// handleC:      node.Consensus.HandleMessageUpdate,
+						// handleC: node.Consensus.HandleMessageUpdateDIY,
+						handleC:      node.Consensus.HandleMessageUpdate,
 						handleCArg:   validMsg,
 						senderPubKey: senderPubKey,
 					}

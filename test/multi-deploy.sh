@@ -41,7 +41,8 @@ function setup() {
 
   # # Kill nodes if any
   # cleanup
-
+  
+# 如果在非bootnode的机器上，不能省略
   # Note that the binarys only works on MacOS & Linux
   build
 
@@ -54,14 +55,13 @@ function setup() {
 
 function launch_bootnode() {
   echo "launching boot node ..."
-  ${DRYRUN} ${ROOT}/bin/bootnode -ip 0.0.0.0 -port 19876 >"${log_folder}"/bootnode.log 2>&1 | tee -a "${LOG_FILE}" &
+  trickle -d 2560 -u 2560 -L 100 ${DRYRUN} ${ROOT}/bin/bootnode -port 19876 >"${log_folder}"/bootnode.log 2>&1 | tee -a "${LOG_FILE}" &
   sleep 1
   BN_MA=$(grep "BN_MA" "${log_folder}"/bootnode.log | awk -F\= ' { print $2 } ')
   echo "bootnode launched." + " $BN_MA"
 }
 
 function launch_localnet() {
-  launch_bootnode
 
   unset -v base_args
   declare -a base_args args
@@ -72,7 +72,7 @@ function launch_localnet() {
     verbosity=3
   fi
 
-  base_args=(--log_folder "${log_folder}" --min_peers "${MIN}" --bootnodes "${BN_MA}" "--network_type=$NETWORK" --blspass file:"${ROOT}/.hmy/blspass.txt" "--dns=false" "--verbosity=${verbosity}")
+  base_args=(--log_folder "${log_folder}" --min_peers "${MIN}" --bootnodes "/ip4/172.31.15.179/tcp/19876/p2p/Qmc1V6W7BwX8Ugb42Ti8RnXF1rY5PF7nnZ6bKBryCgi6cv" "--network_type=$NETWORK" --blspass file:"${ROOT}/.hmy/blspass.txt" "--dns=false" "--verbosity=${verbosity}")
   sleep 2
 
   # Start nodes
@@ -122,7 +122,8 @@ function launch_localnet() {
     esac
 
     # Start the node
-    trickle -s -d 2560 -u 2560 ${DRYRUN} "${ROOT}/bin/harmony" "${args[@]}" "${extra_args[@]}" 2>&1 | tee -a "${LOG_FILE}" &
+    # trickle -s -d 2560 -u 2560
+    ${DRYRUN} "${ROOT}/bin/harmony" "${args[@]}" "${extra_args[@]}" 2>&1 | tee -a "${LOG_FILE}" &
   done <"${config}"
 }
 
