@@ -133,6 +133,10 @@ type Consensus struct {
 	finality int64
 	// finalityCounter keep tracks of the finality time
 	finalityCounter int64
+	// globalBlockSlice store the pieces of divided block
+	globalBlockSlice [][]byte
+	// globalBlockSlice store the number of pieces that we have get this preparing process
+	globalBlockSliceCnt int
 }
 
 // SetCommitDelay sets the commit message delay.  If set to non-zero,
@@ -221,5 +225,8 @@ func New(
 	// channel for receiving newly generated VDF
 	consensus.RndChannel = make(chan [vdfAndSeedSize]byte)
 	consensus.IgnoreViewIDCheck = abool.NewBool(false)
+	// lyn改了
+	consensus.globalBlockSlice = make([][]byte, 13)
+	consensus.globalBlockSliceCnt = 0
 	return &consensus, nil
 }

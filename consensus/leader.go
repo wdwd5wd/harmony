@@ -75,6 +75,10 @@ func (consensus *Consensus) announce(block *types.Block) {
 			return
 		}
 	}
+
+	// lyn log 打一个标记
+	// utils.Logger().Info().
+	// 	Msg("喵喵喵， 打一个标记，这儿SendWithRetry")
 	// Construct broadcast p2p message
 	if err := consensus.msgSender.SendWithRetry(
 		consensus.blockNum, msg_pb.MessageType_ANNOUNCE, []nodeconfig.GroupID{

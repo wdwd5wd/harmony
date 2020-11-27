@@ -38,7 +38,7 @@ func (consensus *Consensus) populateMessageFields(
 
 // construct is the single creation point of messages intended for the wire.
 func (consensus *Consensus) construct(
-	p msg_pb.MessageType, payloadForSign []byte, priKey *bls.PrivateKeyWrapper,
+	p msg_pb.MessageType, payloadForSign []byte, priKey *bls.PrivateKeyWrapper, blockslice ...[]byte,
 ) (*NetworkMessage, error) {
 	message := &msg_pb.Message{
 		ServiceType: msg_pb.ServiceType_CONSENSUS,
@@ -60,6 +60,12 @@ func (consensus *Consensus) construct(
 	switch p {
 	case msg_pb.MessageType_PREPARED:
 		consensusMsg.Block = consensus.block
+		if len(blockslice) != 0 {
+			// lyn log
+			utils.Logger().Info().
+				Msg("用切好的block片段替换之前的完整block")
+			consensusMsg.Block = blockslice[0]
+		}
 		// Payload
 		buffer := bytes.Buffer{}
 		// 96 bytes aggregated signature

@@ -41,7 +41,9 @@ func (consensus *Consensus) AnnounceDIY(block *types.Block) {
 	// consensus.ReadySignal <- struct{}{}
 
 	blockHash := block.Hash()
-
+	// lyn log打一个标记
+	utils.Logger().Info().
+		Msg("喵喵喵， leaderDIY AnnounceDIY")
 	// prepare message and broadcast to validators
 	encodedBlock, err := rlp.EncodeToBytes(block)
 	if err != nil {
