@@ -31,8 +31,8 @@ func (node *Node) setupForValidator() {
 	node.serviceManager.RegisterService(
 		service.BlockProposal,
 		// 我改了
-		// blockproposal.NewDIY(node.Consensus.ReadySignal, node.Consensus.FinishSignal, node.WaitForConsensusReadyV2DIY),
-		blockproposal.New(node.Consensus.ReadySignal, node.WaitForConsensusReadyV2),
+		blockproposal.NewDIY(node.Consensus.ReadySignal, node.Consensus.FinishSignal, node.WaitForConsensusReadyV2DIY),
+		// blockproposal.New(node.Consensus.ReadySignal, node.WaitForConsensusReadyV2),
 	)
 }
 

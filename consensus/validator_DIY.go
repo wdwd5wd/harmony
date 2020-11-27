@@ -45,7 +45,7 @@ func (consensus *Consensus) onAnnounceDIY(msg *msg_pb.Message) {
 	}
 
 ViewIDcheck:
-consensus.mutex.Lock()
+	consensus.mutex.Lock()
 	if consensus.checkViewID(recvMsg) != nil {
 		if consensus.current.Mode() == Normal {
 			consensus.getLogger().Debug().
@@ -192,6 +192,7 @@ consensus.mutex.Lock()
 
 }
 
+// 好像没用
 func (consensus *Consensus) prepareDIY() {
 	groupID := []nodeconfig.GroupID{nodeconfig.NewGroupIDByShardID(nodeconfig.ShardID(consensus.ShardID))}
 	for _, key := range consensus.priKey {
@@ -227,6 +228,7 @@ func (consensus *Consensus) prepareDIY() {
 	consensus.switchPhase(FBFTPrepare, true)
 }
 
+// 好像没用
 // if onPrepared accepts the prepared message from the leader, then
 // it will send a COMMIT message for the leader to receive on the network.
 func (consensus *Consensus) onPreparedDIY(msg *msg_pb.Message) {
