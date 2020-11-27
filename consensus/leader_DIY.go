@@ -1,6 +1,7 @@
 package consensus
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/harmony-one/harmony/consensus/signature"
@@ -36,9 +37,6 @@ func (consensus *Consensus) PreannounceDIY(newBlock *types.Block) {
 }
 
 func (consensus *Consensus) AnnounceDIY(block *types.Block) {
-	// 直接让leader生产下一个块
-	// Send signal to Node to propose the new block for consensus
-	// consensus.ReadySignal <- struct{}{}
 
 	blockHash := block.Hash()
 
@@ -130,6 +128,8 @@ func (consensus *Consensus) AnnounceDIY(block *types.Block) {
 			Msg("[Announce] Sent Announce Message!!")
 	}
 
+	fmt.Println("Shard,", consensus.ShardID, "BroadcastStartTime,", time.Now().UnixNano())
+
 	consensus.getLogger().Debug().
 		Str("From", consensus.phase.String()).
 		Str("To", FBFTPrepare.String()).
@@ -144,6 +144,25 @@ func (consensus *Consensus) AnnounceDIY(block *types.Block) {
 		Str("To", FBFTCommit.String()).
 		Msg("[OnPrepare] Switching phase")
 	consensus.switchPhase(FBFTCommit, true)
+
+	consensus.getLogger().Info().
+		Str("blockHash", block.Hash().Hex()).
+		Uint64("blockNum", block.NumberU64()).
+		Msg("[Announce] Waiting for broadcasting")
+
+	go func() {
+		// 等待广播结束
+		time.Sleep(10 * time.Second)
+
+		// 直接让leader生产下一个块
+		// Send signal to Node to propose the new block for consensus
+		consensus.ReadySignal <- struct{}{}
+
+		consensus.getLogger().Info().
+			Str("blockHash", block.Hash().Hex()).
+			Uint64("blockNum", block.NumberU64()).
+			Msg("[Announce] Broadcasting done")
+	}()
 
 }
 
@@ -336,7 +355,7 @@ func (consensus *Consensus) onCommitDIY(msg *msg_pb.Message) {
 
 		consensus.getLogger().Info().Msg("[OnCommit] Starting Grace Period")
 		go func(viewID uint64) {
-			time.Sleep(2000 * time.Millisecond)
+			time.Sleep(1000 * time.Millisecond)
 			logger.Info().Msg("[OnCommit] Commit Grace Period Ended")
 			consensus.commitFinishChan <- viewID
 		}(viewID)

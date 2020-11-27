@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/hex"
+	"fmt"
 	"sync/atomic"
 	"time"
 
@@ -202,6 +203,8 @@ func (consensus *Consensus) tryCatchupDIY() {
 }
 
 func (consensus *Consensus) finalizeCommitsDIY() {
+	fmt.Println("Shard,", consensus.ShardID, "BroadcastEndTime,", time.Now().UnixNano())
+
 	consensus.getLogger().Info().
 		Int64("NumCommits", consensus.Decider.SignersCount(quorum.Commit)).
 		Msg("[finalizeCommits] Finalizing Block")
@@ -234,14 +237,6 @@ func (consensus *Consensus) finalizeCommitsDIY() {
 		return
 	}
 
-	consensus.tryCatchupDIY()
-	if consensus.blockNum-beforeCatchupNum != 1 {
-		consensus.getLogger().Warn().
-			Uint64("beforeCatchupBlockNum", beforeCatchupNum).
-			Msg("[FinalizeCommits] Leader cannot provide the correct block for committed message")
-		return
-	}
-
 	// if leader success finalize the block, send committed message to validators
 	if err := consensus.msgSender.SendWithRetry(
 		block.NumberU64(),
@@ -255,6 +250,31 @@ func (consensus *Consensus) finalizeCommitsDIY() {
 			Hex("blockHash", curBlockHash[:]).
 			Uint64("blockNum", consensus.blockNum).
 			Msg("[finalizeCommits] Sent Committed Message")
+	}
+
+	// Sleep to wait for the full block time
+	consensus.getLogger().Info().Msg("[finalizeCommits] Waiting for Block Time")
+	<-time.After(time.Until(consensus.NextBlockDue))
+
+	// Update time due for next block
+	consensus.NextBlockDue = time.Now().Add(consensus.BlockPeriod)
+
+	go func() {
+		// Send signal to Node to finalize proposing the new block for consensus
+		consensus.FinishSignal <- struct{}{}
+		// consensus.ReadySignal <- struct{}{}
+
+		consensus.getLogger().Info().Msg("[finalizeCommits] Waiting Block Time Done")
+
+		fmt.Println("Shard,", consensus.ShardID, "RoundTime,", time.Now().UnixNano())
+	}()
+
+	consensus.tryCatchupDIY()
+	if consensus.blockNum-beforeCatchupNum != 1 {
+		consensus.getLogger().Warn().
+			Uint64("beforeCatchupBlockNum", beforeCatchupNum).
+			Msg("[FinalizeCommits] Leader cannot provide the correct block for committed message")
+		return
 	}
 
 	// Dump new block into level db
@@ -280,14 +300,5 @@ func (consensus *Consensus) finalizeCommitsDIY() {
 		Int("numStakingTxns", len(block.StakingTransactions())).
 		Msg("HOORAY!!!!!!! CONSENSUS REACHED!!!!!!!")
 
-	// Sleep to wait for the full block time
-	consensus.getLogger().Info().Msg("[finalizeCommits] Waiting for Block Time")
-	<-time.After(time.Until(consensus.NextBlockDue))
-
-	// Send signal to Node to propose the new block for consensus
-	// consensus.FinishSignal <- struct{}{}
-	consensus.ReadySignal <- struct{}{}
-
-	// Update time due for next block
-	consensus.NextBlockDue = time.Now().Add(consensus.BlockPeriod)
+	fmt.Println("Shard,", consensus.ShardID, "EndTime,", time.Now().UnixNano())
 }

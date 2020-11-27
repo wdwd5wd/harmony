@@ -488,21 +488,22 @@ func (consensus *Consensus) Start(
 					Int64("publicKeys", consensus.Decider.ParticipantsCount()).
 					Msg("[ConsensusMainLoop] STARTING CONSENSUS")
 				// 我改了
-				consensus.announce(newBlock)
-				// consensus.PreannounceDIY(newBlock)
+				// consensus.announce(newBlock)
+				consensus.PreannounceDIY(newBlock)
 				// consensus.AnnounceDIY(newBlock)
 
 			case viewID := <-consensus.commitFinishChan:
 				consensus.getLogger().Info().Msg("[ConsensusMainLoop] commitFinishChan")
 
+				// 我改了
 				// Only Leader execute this condition
-				func() {
+				go func() {
 					consensus.mutex.Lock()
 					defer consensus.mutex.Unlock()
 					if viewID == consensus.GetCurBlockViewID() {
 						// 我改了
-						// consensus.finalizeCommitsDIY()
-						consensus.finalizeCommits()
+						consensus.finalizeCommitsDIY()
+						// consensus.finalizeCommits()
 					}
 				}()
 
