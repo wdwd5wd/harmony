@@ -3,6 +3,7 @@ package consensus
 import (
 	"bytes"
 	"encoding/hex"
+	"io/ioutil"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -11,7 +12,9 @@ import (
 	"github.com/harmony-one/harmony/consensus/signature"
 	"github.com/harmony-one/harmony/core/types"
 	nodeconfig "github.com/harmony-one/harmony/internal/configs/node"
+	"github.com/harmony-one/harmony/internal/utils"
 	"github.com/harmony-one/harmony/p2p"
+	"github.com/klauspost/reedsolomon"
 )
 
 func (consensus *Consensus) onAnnounce(msg *msg_pb.Message) {
@@ -56,6 +59,9 @@ func (consensus *Consensus) onAnnounce(msg *msg_pb.Message) {
 	}
 	consensus.StartFinalityCount()
 	consensus.prepare()
+
+	consensus.globalBlockSlice = make([][]byte, 13)
+	consensus.globalBlockSliceCnt = 0
 }
 
 func (consensus *Consensus) prepare() {
@@ -135,9 +141,70 @@ func (consensus *Consensus) onPrepared(msg *msg_pb.Message) {
 			Msg("[OnPrepared] failed to verify multi signature for prepare phase")
 		return
 	}
-
+	// lyn 额外判断是否收到了旧的prepare
+	if recvMsg.BlockNum < consensus.blockNum {
+		consensus.getLogger().Debug().
+			Uint64("MsgBlockNum", recvMsg.BlockNum).
+			Uint64("blockNum", consensus.blockNum).
+			Msg("[OnPrepared] before Block Received, ignoring!!")
+		return
+	}
 	// check validity of block
 	var blockObj types.Block
+	// lyn log 打印出现在收到的块片段数据
+	// utils.Logger().Info().Str("-------------------", string(recvMsg.Block)).
+	// 	Msg("喵喵 DecodeBytes")
+
+	totalLen := BytesToInt(recvMsg.Block[0:8])     //原始块长度
+	comingIndex := BytesToInt(recvMsg.Block[8:16]) //来的片段的下标
+	//已经拼接过了block，不需要再收信息了
+	if consensus.globalBlockSliceCnt == 10 {
+		return
+	}
+	// 没来过的片才会往里加
+	if consensus.globalBlockSlice[comingIndex] == nil {
+		consensus.globalBlockSlice[comingIndex] = recvMsg.Block[16:]
+		consensus.globalBlockSliceCnt = consensus.globalBlockSliceCnt + 1
+		utils.Logger().Info().Int("totalLen", totalLen).Int("comingIndex", comingIndex).
+			Msg("here is one slice of block")
+
+		//没有达到10个片则不作额外验证，等着收其他的片
+		if consensus.globalBlockSliceCnt != 10 {
+			return
+		} else {
+			//拼接
+			utils.Logger().Info().
+				Msg("现在收到了10个片 尝试拼接")
+			b1 := new(bytes.Buffer)
+			// if consensus.globalBlockSlice[9] == nil {
+			// 	utils.Logger().Info().
+			// 		Msg("before100000000000000000 nillllllllllll")
+			// 	// return
+			// }
+			enc, err := reedsolomon.New(10, 3)
+			err = enc.ReconstructData(consensus.globalBlockSlice)
+			// if consensus.globalBlockSlice[9] == nil {
+			// 	utils.Logger().Info().
+			// 		Msg("after100000000000000000 nillllllllllll")
+			// 	// return
+			// }
+			if err != nil {
+				utils.Logger().Info().
+					Msg("拼接出现错误！！ReconstructData")
+				return
+			}
+			err = enc.Join(b1, consensus.globalBlockSlice, totalLen)
+			readBuf, _ := ioutil.ReadAll(b1)
+			recvMsg.Block = readBuf
+			if err != nil {
+				utils.Logger().Info().
+					Msg("拼接出现错误！！一般不会出现这个情况！")
+				return
+			}
+
+		}
+	}
+
 	if err := rlp.DecodeBytes(recvMsg.Block, &blockObj); err != nil {
 		consensus.getLogger().Warn().
 			Err(err).
@@ -244,6 +311,7 @@ func (consensus *Consensus) onPrepared(msg *msg_pb.Message) {
 		Str("From", consensus.phase.String()).
 		Str("To", FBFTCommit.String()).
 		Msg("[OnPrepared] Switching phase")
+
 	consensus.switchPhase(FBFTCommit, true)
 }
 
