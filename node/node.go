@@ -49,7 +49,7 @@ import (
 
 // 我改了
 // broadcast多少比交易一起
-const BroadcastBatchSize = 1000
+const BroadcastBatchSize = 500
 
 // broadcast交易计数
 var BroadcastCount = 0
@@ -59,8 +59,10 @@ var lock sync.Mutex
 const (
 	// NumTryBroadCast is the number of times trying to broadcast
 	NumTryBroadCast = 3
+	// 我改了
 	// MsgChanBuffer is the buffer of consensus message handlers.
-	MsgChanBuffer = 1024
+	// MsgChanBuffer = 1024
+	MsgChanBuffer = 1024 * 1024
 )
 
 const (
@@ -683,8 +685,8 @@ func (node *Node) Start() error {
 					msg.ValidatorData = validated{
 						consensusBound: true,
 						// 我改了
-						// handleC: node.Consensus.HandleMessageUpdateDIY,
-						handleC:      node.Consensus.HandleMessageUpdate,
+						handleC: node.Consensus.HandleMessageUpdateDIY,
+						// handleC:      node.Consensus.HandleMessageUpdate,
 						handleCArg:   validMsg,
 						senderPubKey: senderPubKey,
 					}
