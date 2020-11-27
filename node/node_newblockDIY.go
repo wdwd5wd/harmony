@@ -1,6 +1,7 @@
 package node
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -41,6 +42,8 @@ func (node *Node) WaitForConsensusReadyV2DIY(readySignal chan struct{}, finishSi
 						utils.Logger().Info().
 							Uint64("blockNum", node.Blockchain().CurrentBlock().NumberU64()+1).
 							Msg("PROPOSING NEW BLOCK ------------------------------------------------")
+
+						fmt.Println("Shard,", node.Consensus.ShardID, "StartTime,", time.Now().UnixNano())
 
 						node.Consensus.StartFinalityCount()
 						newBlock, err := node.proposeNewBlockDIY()
