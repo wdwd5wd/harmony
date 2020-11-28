@@ -1284,7 +1284,12 @@ func (bc *BlockChain) GetMaxGarbageCollectedBlockNumber() int64 {
 //
 // After insertion is done, all accumulated events will be fired.
 func (bc *BlockChain) InsertChain(chain types.Blocks, verifyHeaders bool) (int, error) {
+	utils.Logger().Debug().Uint64("Before:", bc.CurrentBlock().NumberU64()).Msg("CAONIMA")
+
 	n, events, logs, err := bc.insertChain(chain, verifyHeaders)
+
+	utils.Logger().Debug().Uint64("After:", bc.CurrentBlock().NumberU64()).Msg("CAONIMA")
+
 	bc.PostChainEvents(events, logs)
 	return n, err
 }

@@ -85,9 +85,13 @@ func (p *StateProcessor) Process(
 		return nil, nil, nil, 0, nil, err
 	}
 
+	// 我改了
+	utils.Logger().Debug().Msg("Process 1")
+
 	// Iterate over and process the individual transactions
 	for i, tx := range block.Transactions() {
-		statedb.Prepare(tx.Hash(), block.Hash(), i) // set the tx hash
+		statedb.Prepare(tx.Hash(), block.Hash(), i)
+		// 这个花了太长时间
 		receipt, cxReceipt, _, err := ApplyTransaction(
 			p.config, p.bc, &beneficiary, gp, statedb, header, tx, usedGas, cfg,
 		)
@@ -100,6 +104,9 @@ func (p *StateProcessor) Process(
 		}
 		allLogs = append(allLogs, receipt.Logs...)
 	}
+
+	utils.Logger().Debug().Msg("Process 2")
+
 	// Iterate over and process the staking transactions
 	L := len(block.Transactions())
 	for i, tx := range block.StakingTransactions() {
@@ -184,6 +191,7 @@ func ApplyTransaction(config *params.ChainConfig, bc ChainContext, author *commo
 		)
 	}
 
+	// 这里慢
 	msg, err := tx.AsMessage(types.MakeSigner(config, header.Epoch()))
 	// skip signer err for additiononly tx
 	if err != nil {
@@ -300,8 +308,9 @@ func ApplyIncomingReceipt(
 				"ApplyIncomingReceipts: Invalid incomingReceipt! %v", cx,
 			)
 		}
-		utils.Logger().Info().Interface("receipt", cx).
-			Msgf("ApplyIncomingReceipts: ADDING BALANCE %d", cx.Amount)
+		// 我改了
+		// utils.Logger().Info().Interface("receipt", cx).
+		// 	Msgf("ApplyIncomingReceipts: ADDING BALANCE %d", cx.Amount)
 
 		if !db.Exist(*cx.To) {
 			db.CreateAccount(*cx.To)

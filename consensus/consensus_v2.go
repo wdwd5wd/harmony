@@ -37,6 +37,8 @@ func (consensus *Consensus) HandleMessageUpdate(ctx context.Context, msg *msg_pb
 	// in order to avoid possible trap forever but drop PREPARE and COMMIT
 	// which are message types specifically for a node acting as leader
 	// so we just ignore those messages
+	//lyn log
+	//consensus.getLogger().Warn().Msg("this is HandleMessageUpdate")
 	if consensus.IsViewChangingMode() &&
 		(msg.Type == msg_pb.MessageType_PREPARE ||
 			msg.Type == msg_pb.MessageType_COMMIT) {
@@ -95,6 +97,9 @@ func (consensus *Consensus) HandleMessageUpdate(ctx context.Context, msg *msg_pb
 			return errVerifyMessageSignature
 		}
 		consensus.onNewView(msg)
+		//lyn log
+		// default:
+		// 	consensus.getLogger().Warn().Msg("this is default messgage in consensus")
 	}
 
 	return nil
@@ -133,14 +138,6 @@ func (consensus *Consensus) finalizeCommits() {
 		return
 	}
 
-	consensus.tryCatchup()
-	if consensus.blockNum-beforeCatchupNum != 1 {
-		consensus.getLogger().Warn().
-			Uint64("beforeCatchupBlockNum", beforeCatchupNum).
-			Msg("[FinalizeCommits] Leader cannot provide the correct block for committed message")
-		return
-	}
-
 	// if leader success finalize the block, send committed message to validators
 	if err := consensus.msgSender.SendWithRetry(
 		block.NumberU64(),
@@ -154,6 +151,15 @@ func (consensus *Consensus) finalizeCommits() {
 			Hex("blockHash", curBlockHash[:]).
 			Uint64("blockNum", consensus.blockNum).
 			Msg("[finalizeCommits] Sent Committed Message")
+	}
+
+	// 我改了，与前面的发送调换了顺序
+	consensus.tryCatchup()
+	if consensus.blockNum-beforeCatchupNum != 1 {
+		consensus.getLogger().Warn().
+			Uint64("beforeCatchupBlockNum", beforeCatchupNum).
+			Msg("[FinalizeCommits] Leader cannot provide the correct block for committed message")
+		return
 	}
 
 	// Dump new block into level db
@@ -340,6 +346,8 @@ func (consensus *Consensus) Start(
 				toStart <- struct{}{}
 				consensus.getLogger().Info().Time("time", time.Now()).Msg("[ConsensusMainLoop] Send ReadySignal")
 				consensus.ReadySignal <- struct{}{}
+				// 我改了，初始化发送finishSignal
+				consensus.FinishSignal <- struct{}{}
 			}()
 		}
 		consensus.getLogger().Info().Time("time", time.Now()).Msg("[ConsensusMainLoop] Consensus started")
@@ -399,6 +407,7 @@ func (consensus *Consensus) Start(
 			case newBlock := <-blockChannel:
 				consensus.getLogger().Info().
 					Uint64("MsgBlockNum", newBlock.NumberU64()).
+					Str("Hash:", newBlock.Hash().Hex()).
 					Msg("[ConsensusMainLoop] Received Proposed New Block!")
 
 				//VRF/VDF is only generated in the beacon chain
@@ -478,12 +487,16 @@ func (consensus *Consensus) Start(
 				consensus.msgSender.Reset(newBlock.NumberU64())
 
 				consensus.getLogger().Info().
+					Str("Hash:", newBlock.Hash().Hex()).
 					Int("numTxs", len(newBlock.Transactions())).
 					Int("numStakingTxs", len(newBlock.StakingTransactions())).
 					Time("startTime", startTime).
 					Int64("publicKeys", consensus.Decider.ParticipantsCount()).
 					Msg("[ConsensusMainLoop] STARTING CONSENSUS")
+				// 我改了
 				consensus.announce(newBlock)
+				// consensus.PreannounceDIY(newBlock)
+				// consensus.AnnounceDIY(newBlock)
 
 			case viewID := <-consensus.commitFinishChan:
 				consensus.getLogger().Info().Msg("[ConsensusMainLoop] commitFinishChan")
@@ -493,6 +506,8 @@ func (consensus *Consensus) Start(
 					consensus.mutex.Lock()
 					defer consensus.mutex.Unlock()
 					if viewID == consensus.GetCurBlockViewID() {
+						// 我改了
+						// consensus.finalizeCommitsDIY()
 						consensus.finalizeCommits()
 					}
 				}()

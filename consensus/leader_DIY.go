@@ -5,6 +5,7 @@ import (
 
 	"github.com/harmony-one/harmony/consensus/signature"
 	nodeconfig "github.com/harmony-one/harmony/internal/configs/node"
+	"github.com/harmony-one/harmony/internal/utils"
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/harmony-one/bls/ffi/go/bls"
@@ -14,9 +15,35 @@ import (
 	"github.com/harmony-one/harmony/p2p"
 )
 
-func (consensus *Consensus) announce(block *types.Block) {
-	blockHash := block.Hash()
+// PreannounceDIY 把一些需要信息先打包
+func (consensus *Consensus) PreannounceDIY(newBlock *types.Block) {
+	if _, err := consensus.ChainReader.InsertChain([]*types.Block{newBlock}, true); err != nil {
+		utils.Logger().Error().
+			Err(err).
+			Uint64("blockNum", newBlock.NumberU64()).
+			Str("parentHash", newBlock.Header().ParentHash().Hex()).
+			Str("hash", newBlock.Header().Hash().Hex()).
+			Msg("Error Adding new block to blockchain")
+		return
+	}
+	utils.Logger().Info().
+		Uint64("blockNum", newBlock.NumberU64()).
+		Str("hash", newBlock.Header().Hash().Hex()).
+		Msg("Added New Block to Blockchain!!!")
 
+	consensus.AnnounceDIY(newBlock)
+
+}
+
+func (consensus *Consensus) AnnounceDIY(block *types.Block) {
+	// 直接让leader生产下一个块
+	// Send signal to Node to propose the new block for consensus
+	// consensus.ReadySignal <- struct{}{}
+
+	blockHash := block.Hash()
+	// lyn log打一个标记
+	utils.Logger().Info().
+		Msg("喵喵喵， leaderDIY AnnounceDIY")
 	// prepare message and broadcast to validators
 	encodedBlock, err := rlp.EncodeToBytes(block)
 	if err != nil {
@@ -37,7 +64,7 @@ func (consensus *Consensus) announce(block *types.Block) {
 		return
 	}
 
-	networkMessage, err := consensus.construct(msg_pb.MessageType_ANNOUNCE, nil, key)
+	networkMessage, err := consensus.constructDIY(msg_pb.MessageType_ANNOUNCE, nil, key)
 	if err != nil {
 		consensus.getLogger().Err(err).
 			Str("message-type", msg_pb.MessageType_ANNOUNCE.String()).
@@ -55,19 +82,31 @@ func (consensus *Consensus) announce(block *types.Block) {
 		Msg("[Announce] Added Announce message in FPBT")
 	consensus.FBFTLog.AddBlock(block)
 
+	// Leader add commit phase signature
+	var blockObj types.Block
+	if err := rlp.DecodeBytes(consensus.block, &blockObj); err != nil {
+		consensus.getLogger().Warn().
+			Err(err).
+			Uint64("BlockNum", consensus.blockNum).
+			Msg("[Announce] Unparseable block data")
+		return
+	}
+	commitPayload := signature.ConstructCommitPayload(consensus.ChainReader,
+		blockObj.Epoch(), blockObj.Hash(), blockObj.NumberU64(), blockObj.Header().ViewID().Uint64())
+
 	// Leader sign the block hash itself
 	for i, key := range consensus.priKey {
-		if err := consensus.prepareBitmap.SetKey(key.Pub.Bytes, true); err != nil {
+		if err := consensus.commitBitmap.SetKey(key.Pub.Bytes, true); err != nil {
 			consensus.getLogger().Warn().Err(err).Msgf(
-				"[Announce] Leader prepareBitmap SetKey failed for key at index %d", i,
+				"[Announce] Leader commitBitmap SetKey failed for key at index %d", i,
 			)
 			continue
 		}
 
 		if _, err := consensus.Decider.AddNewVote(
-			quorum.Prepare,
+			quorum.Commit,
 			key.Pub.Bytes,
-			key.Pri.SignHash(consensus.blockHash[:]),
+			key.Pri.SignHash(commitPayload),
 			block.Hash(),
 			block.NumberU64(),
 			block.Header().ViewID().Uint64(),
@@ -76,9 +115,6 @@ func (consensus *Consensus) announce(block *types.Block) {
 		}
 	}
 
-	// lyn log 打一个标记
-	// utils.Logger().Info().
-	// 	Msg("喵喵喵， 打一个标记，这儿SendWithRetry")
 	// Construct broadcast p2p message
 	if err := consensus.msgSender.SendWithRetry(
 		consensus.blockNum, msg_pb.MessageType_ANNOUNCE, []nodeconfig.GroupID{
@@ -101,9 +137,19 @@ func (consensus *Consensus) announce(block *types.Block) {
 		Str("To", FBFTPrepare.String()).
 		Msg("[Announce] Switching phase")
 	consensus.switchPhase(FBFTPrepare, true)
+
+	// Stop retry committed msg of last consensus
+	consensus.msgSender.StopRetry(msg_pb.MessageType_COMMITTED)
+
+	consensus.getLogger().Debug().
+		Str("From", consensus.phase.String()).
+		Str("To", FBFTCommit.String()).
+		Msg("[OnPrepare] Switching phase")
+	consensus.switchPhase(FBFTCommit, true)
+
 }
 
-func (consensus *Consensus) onPrepare(msg *msg_pb.Message) {
+func (consensus *Consensus) onPrepareDIY(msg *msg_pb.Message) {
 	recvMsg, err := ParseFBFTMessage(msg)
 	if err != nil {
 		consensus.getLogger().Error().Err(err).Msg("[OnPrepare] Unparseable validator message")
@@ -195,7 +241,7 @@ func (consensus *Consensus) onPrepare(msg *msg_pb.Message) {
 	//// Read - End
 }
 
-func (consensus *Consensus) onCommit(msg *msg_pb.Message) {
+func (consensus *Consensus) onCommitDIY(msg *msg_pb.Message) {
 	recvMsg, err := ParseFBFTMessage(msg)
 	if err != nil {
 		consensus.getLogger().Debug().Err(err).Msg("[OnCommit] Parse pbft message failed")
@@ -253,7 +299,7 @@ func (consensus *Consensus) onCommit(msg *msg_pb.Message) {
 
 	//// Write - Start
 	// Check for potential double signing
-	if consensus.checkDoubleSign(recvMsg) {
+	if consensus.checkDoubleSignDIY(recvMsg) {
 		return
 	}
 	if _, err := consensus.Decider.AddNewVote(
@@ -274,41 +320,13 @@ func (consensus *Consensus) onCommit(msg *msg_pb.Message) {
 	//// Read - Start
 	viewID := consensus.GetCurBlockViewID()
 
-	// 我改了，直接2/3就回复，不等了
-
-	// // if consensus.Decider.IsAllSigsCollected() {
-	// // 	go func(viewID uint64) {
-	// // 		logger.Info().Msg("[OnCommit] 100% Enough commits received")
-	// // 		consensus.commitFinishChan <- viewID
-	// // 	}(viewID)
-
-	// // 	consensus.msgSender.StopRetry(msg_pb.MessageType_PREPARED)
-	// // }
-
-	// quorumIsMet := consensus.Decider.IsQuorumAchieved(quorum.Commit)
-	// //// Read - End
-
-	// if !quorumWasMet && quorumIsMet {
-	// 	logger.Info().Msg("[OnCommit] 2/3 Enough commits received")
-
-	// 	// consensus.getLogger().Info().Msg("[OnCommit] Starting Grace Period")
-	// 	go func(viewID uint64) {
-	// 		// time.Sleep(2500 * time.Millisecond)
-	// 		// logger.Info().Msg("[OnCommit] Commit Grace Period Ended")
-	// 		consensus.commitFinishChan <- viewID
-	// 	}(viewID)
-
-	// 	consensus.msgSender.StopRetry(msg_pb.MessageType_PREPARED)
-	// 	return
-	// }
-
 	if consensus.Decider.IsAllSigsCollected() {
 		go func(viewID uint64) {
 			logger.Info().Msg("[OnCommit] 100% Enough commits received")
 			consensus.commitFinishChan <- viewID
 		}(viewID)
 
-		consensus.msgSender.StopRetry(msg_pb.MessageType_PREPARED)
+		consensus.msgSender.StopRetry(msg_pb.MessageType_ANNOUNCE)
 		return
 	}
 
@@ -320,11 +338,11 @@ func (consensus *Consensus) onCommit(msg *msg_pb.Message) {
 
 		consensus.getLogger().Info().Msg("[OnCommit] Starting Grace Period")
 		go func(viewID uint64) {
-			time.Sleep(2500 * time.Millisecond)
+			time.Sleep(2000 * time.Millisecond)
 			logger.Info().Msg("[OnCommit] Commit Grace Period Ended")
 			consensus.commitFinishChan <- viewID
 		}(viewID)
 
-		consensus.msgSender.StopRetry(msg_pb.MessageType_PREPARED)
+		consensus.msgSender.StopRetry(msg_pb.MessageType_ANNOUNCE)
 	}
 }

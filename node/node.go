@@ -47,6 +47,15 @@ import (
 	"github.com/rcrowley/go-metrics"
 )
 
+// 我改了
+// broadcast多少比交易一起
+const BroadcastBatchSize = 1000
+
+// broadcast交易计数
+var BroadcastCount = 0
+var BroadcastTxs = types.Transactions{}
+var lock sync.Mutex
+
 const (
 	// NumTryBroadCast is the number of times trying to broadcast
 	NumTryBroadCast = 3
@@ -208,13 +217,14 @@ func (node *Node) addPendingTransactions(newTxs types.Transactions) []error {
 	}
 	errs := node.TxPool.AddRemotes(poolTxs)
 
-	pendingCount, queueCount := node.TxPool.Stats()
-	utils.Logger().Info().
-		Interface("err", errs).
-		Int("length of newTxs", len(newTxs)).
-		Int("totalPending", pendingCount).
-		Int("totalQueued", queueCount).
-		Msg("[addPendingTransactions] Adding more transactions")
+	// 我改了
+	// pendingCount, queueCount := node.TxPool.Stats()
+	// utils.Logger().Info().
+	// 	Interface("err", errs).
+	// 	Int("length of newTxs", len(newTxs)).
+	// 	Int("totalPending", pendingCount).
+	// 	Int("totalQueued", queueCount).
+	// 	Msg("[addPendingTransactions] Adding more transactions")
 	return errs
 }
 
@@ -276,8 +286,21 @@ func (node *Node) AddPendingTransaction(newTx *types.Transaction) error {
 		}
 		// here is reached when adding a crossshard transaction into the blockchain-ly
 		if err == nil || node.BroadcastInvalidTx {
-			utils.Logger().Info().Str("Hash", newTx.Hash().Hex()).Msg("Broadcasting Tx")
-			node.tryBroadcast(newTx)
+			// 我改了
+			// utils.Logger().Info().Str("Hash", newTx.Hash().Hex()).Msg("Broadcasting Tx")
+			// node.tryBroadcast(newTx)
+
+			// lock.Lock()
+			// BroadcastCount++
+			// if BroadcastCount == BroadcastBatchSize {
+			// 	utils.Logger().Info().Str("Hash", newTx.Hash().Hex()).Msg("Broadcasting Batched Txs")
+			// 	node.tryBroadcastDIY(&BroadcastTxs, newTx)
+			// 	BroadcastCount = 0
+			// } else {
+			// 	BroadcastTxs = append(BroadcastTxs, newTx)
+			// }
+			// lock.Unlock()
+
 		}
 		return err
 	}
@@ -437,6 +460,8 @@ func (node *Node) validateShardBoundMessage(
 	atomic.AddUint32(&node.NumTotalMessages, 1)
 
 	if err := protobuf.Unmarshal(payload, &m); err != nil {
+		utils.Logger().Info().Str("payload", string(payload)).
+			Msg("here is error in Unmarshal")
 		atomic.AddUint32(&node.NumInvalidMessages, 1)
 		return nil, nil, true, errors.WithStack(err)
 	}
@@ -641,6 +666,8 @@ func (node *Node) Start() error {
 
 					// received consensus message in non-consensus bound topic
 					if !isConsensusBound {
+						utils.Logger().Debug().
+							Msg("1")
 						errChan <- withError{
 							errors.WithStack(errConsensusMessageOnUnexpectedTopic), msg,
 						}
@@ -653,6 +680,8 @@ func (node *Node) Start() error {
 					)
 
 					if err != nil {
+						utils.Logger().Debug().
+							Msg("2")
 						errChan <- withError{err, msg.GetFrom()}
 						return libp2p_pubsub.ValidationReject
 					}
@@ -664,9 +693,11 @@ func (node *Node) Start() error {
 
 					msg.ValidatorData = validated{
 						consensusBound: true,
-						handleC:        node.Consensus.HandleMessageUpdate,
-						handleCArg:     validMsg,
-						senderPubKey:   senderPubKey,
+						// 我改了
+						// handleC: node.Consensus.HandleMessageUpdateDIY,
+						handleC:      node.Consensus.HandleMessageUpdate,
+						handleCArg:   validMsg,
+						senderPubKey: senderPubKey,
 					}
 					return libp2p_pubsub.ValidationAccept
 
@@ -686,6 +717,8 @@ func (node *Node) Start() error {
 							return libp2p_pubsub.ValidationAccept
 						default:
 							// TODO (lc): block peers sending error messages
+							utils.Logger().Debug().
+								Msg("3")
 							errChan <- withError{err, msg.GetFrom()}
 							return libp2p_pubsub.ValidationReject
 						}
@@ -709,6 +742,8 @@ func (node *Node) Start() error {
 						utils.Logger().Warn().
 							Str("topic", topicNamed).Msg("[context] exceeded validation deadline")
 					}
+					utils.Logger().Debug().
+						Msg("4")
 					errChan <- withError{errors.WithStack(ctx.Err()), nil}
 				default:
 					return libp2p_pubsub.ValidationAccept
@@ -747,10 +782,14 @@ func (node *Node) Start() error {
 							if err := node.explorerMessageHandler(
 								ctx, msg.handleCArg,
 							); err != nil {
+								utils.Logger().Debug().
+									Msg("5")
 								errChan <- withError{err, nil}
 							}
 						} else {
 							if err := msg.handleC(ctx, msg.handleCArg, msg.senderPubKey); err != nil {
+								utils.Logger().Debug().
+									Msg("6")
 								errChan <- withError{err, nil}
 							}
 						}
@@ -762,6 +801,8 @@ func (node *Node) Start() error {
 							utils.Logger().Warn().
 								Str("topic", topicNamed).Msg("[context] exceeded consensus message handler deadline")
 						}
+						utils.Logger().Debug().
+							Msg("7")
 						errChan <- withError{errors.WithStack(ctx.Err()), nil}
 					default:
 						return
@@ -786,6 +827,8 @@ func (node *Node) Start() error {
 						defer semNode.Release(1)
 
 						if err := msg.handleE(ctx, msg.handleEArg, msg.actionType); err != nil {
+							utils.Logger().Debug().
+								Msg("8")
 							errChan <- withError{err, nil}
 						}
 					}
@@ -796,6 +839,8 @@ func (node *Node) Start() error {
 							utils.Logger().Warn().
 								Str("topic", topicNamed).Msg("[context] exceeded node message handler deadline")
 						}
+						utils.Logger().Debug().
+							Msg("9")
 						errChan <- withError{errors.WithStack(ctx.Err()), nil}
 					default:
 						return
@@ -809,6 +854,8 @@ func (node *Node) Start() error {
 			for {
 				nextMsg, err := sub.Next(context.Background())
 				if err != nil {
+					utils.Logger().Debug().
+						Msg("10")
 					errChan <- withError{errors.WithStack(err), nil}
 					continue
 				}

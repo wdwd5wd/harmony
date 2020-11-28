@@ -8,11 +8,15 @@ import (
 
 // Service is a block proposal service.
 type Service struct {
-	stopChan              chan struct{}
-	stoppedChan           chan struct{}
-	readySignal           chan struct{}
+	stopChan    chan struct{}
+	stoppedChan chan struct{}
+	readySignal chan struct{}
+	// 我改了，增加finishSignal
+	finishSignal          chan struct{}
 	messageChan           chan *msg_pb.Message
 	waitForConsensusReady func(readySignal chan struct{}, stopChan chan struct{}, stoppedChan chan struct{})
+	// 我改了，增加finishSignal
+	waitForConsensusReadyDIY func(readySignal chan struct{}, finishSignal chan struct{}, stopChan chan struct{}, stoppedChan chan struct{})
 }
 
 // New returns a block proposal service.
@@ -35,6 +39,8 @@ func (s *Service) Init() {
 
 // Run runs block proposal.
 func (s *Service) Run(stopChan chan struct{}, stoppedChan chan struct{}) {
+	// 我改了
+	// s.waitForConsensusReadyDIY(s.readySignal, s.finishSignal, s.stopChan, s.stoppedChan)
 	s.waitForConsensusReady(s.readySignal, s.stopChan, s.stoppedChan)
 }
 

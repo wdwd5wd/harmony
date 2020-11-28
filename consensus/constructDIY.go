@@ -12,33 +12,9 @@ import (
 	"github.com/harmony-one/harmony/internal/utils"
 )
 
-// NetworkMessage is a message intended to be
-// created only for distribution to
-// all the other quorum members.
-type NetworkMessage struct {
-	Phase                      msg_pb.MessageType
-	Bytes                      []byte
-	FBFTMsg                    *FBFTMessage
-	OptionalAggregateSignature *bls_core.Sign
-}
-
-// Populates the common basic fields for all consensus message.
-func (consensus *Consensus) populateMessageFields(
-	request *msg_pb.ConsensusRequest, blockHash []byte, pubKey bls.SerializedPublicKey,
-) *msg_pb.ConsensusRequest {
-	request.ViewId = consensus.GetCurBlockViewID()
-	request.BlockNum = consensus.blockNum
-	request.ShardId = consensus.ShardID
-	// 32 byte block hash
-	request.BlockHash = blockHash
-	// sender address
-	request.SenderPubkey = pubKey[:]
-	return request
-}
-
 // construct is the single creation point of messages intended for the wire.
-func (consensus *Consensus) construct(
-	p msg_pb.MessageType, payloadForSign []byte, priKey *bls.PrivateKeyWrapper, blockslice ...[]byte,
+func (consensus *Consensus) constructDIY(
+	p msg_pb.MessageType, payloadForSign []byte, priKey *bls.PrivateKeyWrapper,
 ) (*NetworkMessage, error) {
 	message := &msg_pb.Message{
 		ServiceType: msg_pb.ServiceType_CONSENSUS,
@@ -60,12 +36,6 @@ func (consensus *Consensus) construct(
 	switch p {
 	case msg_pb.MessageType_PREPARED:
 		consensusMsg.Block = consensus.block
-		if len(blockslice) != 0 {
-			// lyn log
-			utils.Logger().Info().
-				Msg("用切好的block片段替换之前的完整block")
-			consensusMsg.Block = blockslice[0]
-		}
 		// Payload
 		buffer := bytes.Buffer{}
 		// 96 bytes aggregated signature
@@ -91,6 +61,8 @@ func (consensus *Consensus) construct(
 		buffer.Write(consensus.commitBitmap.Bitmap)
 		consensusMsg.Payload = buffer.Bytes()
 	case msg_pb.MessageType_ANNOUNCE:
+		consensusMsg.Block = consensus.block
+
 		consensusMsg.Payload = consensus.blockHash[:]
 	}
 

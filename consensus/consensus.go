@@ -89,6 +89,10 @@ type Consensus struct {
 	vcLock sync.Mutex
 	// Signal channel for starting a new consensus process
 	ReadySignal chan struct{}
+	// 我改了，FinishSignal用于提醒出块节点共识已达成，可以将块打包并广播了
+	FinishSignal chan struct{}
+	// 我改了，commitFinishSig用于提醒validator自己已经成功commit，可以接收announce了
+	commitFinishSig chan struct{}
 	// The post-consensus processing func passed from Node object
 	// Called when consensus on a new block is done
 	OnConsensusDone func(*types.Block)
@@ -129,6 +133,10 @@ type Consensus struct {
 	finality int64
 	// finalityCounter keep tracks of the finality time
 	finalityCounter int64
+	// globalBlockSlice store the pieces of divided block
+	globalBlockSlice [][]byte
+	// globalBlockSlice store the number of pieces that we have get this preparing process
+	globalBlockSliceCnt int
 }
 
 // SetCommitDelay sets the commit message delay.  If set to non-zero,
@@ -210,8 +218,15 @@ func New(
 	consensus.SlashChan = make(chan slash.Record)
 	consensus.commitFinishChan = make(chan uint64)
 	consensus.ReadySignal = make(chan struct{})
+	// 我改了
+	consensus.FinishSignal = make(chan struct{})
+	// 我改了
+	consensus.commitFinishSig = make(chan struct{})
 	// channel for receiving newly generated VDF
 	consensus.RndChannel = make(chan [vdfAndSeedSize]byte)
 	consensus.IgnoreViewIDCheck = abool.NewBool(false)
+	// lyn改了
+	consensus.globalBlockSlice = make([][]byte, 13)
+	consensus.globalBlockSliceCnt = 0
 	return &consensus, nil
 }

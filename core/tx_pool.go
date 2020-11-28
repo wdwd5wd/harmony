@@ -166,6 +166,7 @@ type TxPoolConfig struct {
 
 // DefaultTxPoolConfig contains the default configurations for the transaction
 // pool.
+// 我改了
 var DefaultTxPoolConfig = TxPoolConfig{
 	Journal:   "transactions.rlp",
 	Rejournal: time.Hour,
@@ -173,10 +174,15 @@ var DefaultTxPoolConfig = TxPoolConfig{
 	PriceLimit: 1,
 	PriceBump:  10,
 
-	AccountSlots: 16,
-	GlobalSlots:  4096,
-	AccountQueue: 64,
-	GlobalQueue:  1024,
+	// AccountSlots: 16,
+	// GlobalSlots:  4096,
+	// AccountQueue: 64,
+	// GlobalQueue:  1024,
+
+	AccountSlots: 1000000,
+	GlobalSlots:  1000000,
+	AccountQueue: 1000000,
+	GlobalQueue:  1000000,
 
 	Lifetime: 30 * time.Minute,
 
@@ -914,7 +920,8 @@ func (pool *TxPool) add(tx types.PoolTransaction, local bool) (bool, error) {
 	// If the transaction is already known, discard it
 	hash := tx.Hash()
 	if pool.all.Get(hash) != nil {
-		logger.Info().Str("hash", hash.Hex()).Msg("Discarding already known transaction")
+		// 我改了
+		// logger.Info().Str("hash", hash.Hex()).Msg("Discarding already known transaction")
 		return false, errors.WithMessagef(ErrKnownTransaction, "transaction hash %x", hash)
 	}
 	// If the transaction fails basic validation, discard it
@@ -1013,11 +1020,12 @@ func (pool *TxPool) add(tx types.PoolTransaction, local bool) (bool, error) {
 	logger.Info().Str("Lyn","break point 1").Msg("Set or refresh beat for account timeout eviction")
 	pool.beats[from] = time.Now()
 
-	logger.Info().
-		Str("hash", hash.Hex()).
-		Interface("from", from).
-		Interface("to", tx.To()).
-		Msg("Pooled new future transaction")
+	// 我改了
+	// logger.Info().
+	// 	Str("hash", hash.Hex()).
+	// 	Interface("from", from).
+	// 	Interface("to", tx.To()).
+	// 	Msg("Pooled new future transaction")
 	return replace, nil
 }
 
@@ -1307,7 +1315,8 @@ func (pool *TxPool) promoteExecutables(accounts []common.Address) {
 			hash := tx.Hash()
 			pool.all.Remove(hash)
 			pool.priced.Removed()
-			logger.Info().Str("hash", hash.Hex()).Msg("Removed old queued transaction")
+			// 我改了
+			// logger.Info().Str("hash", hash.Hex()).Msg("Removed old queued transaction")
 			// Do not report to error sink as old txs are on chain or meaningful error caught elsewhere.
 		}
 		// Drop all transactions that are too costly (low balance or out of gas)
@@ -1322,9 +1331,10 @@ func (pool *TxPool) promoteExecutables(accounts []common.Address) {
 		}
 		// Gather all executable transactions and promote them
 		for _, tx := range list.Ready(pool.pendingState.GetNonce(addr)) {
-			hash := tx.Hash()
+			// hash := tx.Hash()
 			if pool.promoteTx(addr, tx) {
-				logger.Info().Str("hash", hash.Hex()).Msg("Promoting queued transaction")
+				// 我改了
+				// logger.Info().Str("hash", hash.Hex()).Msg("Promoting queued transaction")
 				promoted = append(promoted, tx)
 			}
 		}
@@ -1480,7 +1490,8 @@ func (pool *TxPool) demoteUnexecutables() {
 			hash := tx.Hash()
 			pool.all.Remove(hash)
 			pool.priced.Removed()
-			logger.Info().Str("hash", hash.Hex()).Msg("Removed old pending transaction")
+			// 我改了
+			// logger.Info().Str("hash", hash.Hex()).Msg("Removed old pending transaction")
 			// Do not report to error sink as old txs are on chain or meaningful error caught elsewhere.
 		}
 		// Drop all transactions that are too costly (low balance or out of gas), and queue any invalids back for later
