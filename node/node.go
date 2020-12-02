@@ -1,8 +1,12 @@
 package node
 
 import (
+	"bufio"
+	"bytes"
 	"context"
+	"encoding/binary"
 	"fmt"
+	"log"
 	"math/big"
 	"os"
 	"strings"
@@ -39,6 +43,7 @@ import (
 	staking "github.com/harmony-one/harmony/staking/types"
 	"github.com/harmony-one/harmony/webhooks"
 	lru "github.com/hashicorp/golang-lru"
+	"github.com/libp2p/go-libp2p-core/network"
 	libp2p_peer "github.com/libp2p/go-libp2p-core/peer"
 	libp2p_pubsub "github.com/libp2p/go-libp2p-pubsub"
 	"github.com/pkg/errors"
@@ -465,9 +470,16 @@ func (node *Node) validateShardBoundMessage(
 		atomic.AddUint32(&node.NumInvalidMessages, 1)
 		return nil, nil, true, errors.WithStack(err)
 	}
-
+	// if m.Type == msg_pb.MessageType_PREPARED {
+	// 	utils.Logger().Info().Str("payload", string(payload)).
+	// 		Msg("————————————————this is MessageType_PREPARED ")
+	// }
 	// ignore messages not intended for explorer
 	if node.NodeConfig.Role() == nodeconfig.ExplorerNode {
+		// if m.Type == msg_pb.MessageType_PREPARED {
+		// 	utils.Logger().Info().Str("payload", string(payload)).
+		// 		Msg("————————————————ignore 1111 ExplorerNode")
+		// }
 		switch m.Type {
 		case
 			msg_pb.MessageType_ANNOUNCE,
@@ -499,6 +511,10 @@ func (node *Node) validateShardBoundMessage(
 
 	// ignore message not intended for leader, but still forward them to the network
 	if node.Consensus.IsLeader() {
+		if m.Type == msg_pb.MessageType_PREPARED {
+			utils.Logger().Info().Int("payload length", len(payload)).
+				Msg("!!!!!!!!!!!!!!ignore 222 this is leader MessageType_PREPARED")
+		}
 		switch m.Type {
 		case msg_pb.MessageType_ANNOUNCE, msg_pb.MessageType_PREPARED, msg_pb.MessageType_COMMITTED:
 			atomic.AddUint32(&node.NumIgnoredMessages, 1)
@@ -533,6 +549,10 @@ func (node *Node) validateShardBoundMessage(
 	// ignore mesage not intended for validator
 	// but still forward them to the network
 	if !node.Consensus.IsLeader() {
+		// if m.Type == msg_pb.MessageType_PREPARED {
+		// 	utils.Logger().Info().Str("payload", string(payload)).
+		// 		Msg("————————————————ignore 333   ignore mesage not intended for validator")
+		// }
 		switch m.Type {
 		case msg_pb.MessageType_PREPARE, msg_pb.MessageType_COMMIT:
 			atomic.AddUint32(&node.NumIgnoredMessages, 1)
@@ -553,6 +573,82 @@ var (
 	errMsgHadNoHMYPayLoadAssumption      = errors.New("did not have sufficient size for hmy msg")
 	errConsensusMessageOnUnexpectedTopic = errors.New("received consensus on wrong topic")
 )
+
+// lyn 加入的用于int 与byte 转化
+// IntToBytes ...
+func IntToBytes(n int) []byte {
+	data := int64(n)
+	bytebuf := bytes.NewBuffer([]byte{})
+	binary.Write(bytebuf, binary.BigEndian, data)
+	return bytebuf.Bytes()
+}
+
+// BytesToInt ...
+func BytesToInt(bys []byte) int {
+	bytebuff := bytes.NewBuffer(bys)
+	var data int64
+	binary.Read(bytebuff, binary.BigEndian, &data)
+	return int(data)
+}
+
+// GetConsensus return consensus
+func (node *Node) GetConsensus() *consensus.Consensus {
+	return node.Consensus
+}
+
+func (node *Node) readData(rw *bufio.ReadWriter, s network.Stream) {
+
+	buf := make([]byte, 4096)
+	length, err := rw.Read(buf)
+
+	utils.Logger().Warn().Int("————————length", length).Msg("get a buf ")
+
+	// utils.Logger().Warn().Int("length of tmp buf", len(buf)).Msg("get a buf ")
+
+	// utils.Logger().Warn().Str("data is ", string(buf)).Msg("data")
+	if err != nil {
+		utils.Logger().Warn().Msg("!!!!!!!!!!!read buf error")
+	}
+	consensusBlockNum := BytesToInt(buf[0:8])
+	consen := node.GetConsensus()
+	// 这里可能不能直接使用我的blocknum和其他数据
+	err = consen.GetMsgSender().SendWithRetry(
+		uint64(consensusBlockNum),
+		msg_pb.MessageType_PREPARED, []nodeconfig.GroupID{
+			nodeconfig.NewGroupIDByShardID(nodeconfig.ShardID(consen.GetShardId())),
+		},
+		buf[8:length],
+	)
+	// err = consen.GetMsgSender().SendWithoutRetry([]nodeconfig.GroupID{
+	// 	nodeconfig.NewGroupIDByShardID(nodeconfig.ShardID(consen.GetShardId())),
+	if err != nil {
+		utils.Logger().Warn().Msg("!!!!!!!!!!!SendWithRetry error ")
+	}
+	utils.Logger().Warn().Msg("!!!!!!!!!!!!!I think sending is done")
+	// str, _ := rw.ReadString('\n')
+
+	// if str == "" {
+	// 	return
+	// }
+	// if str != "\n" {
+	// 	// Green console colour: 	\x1b[32m
+	// 	// Reset console colour: 	\x1b[0m
+
+	// 	log.Println("我来了，很猛！readData")
+	// 	utils.Logger().Warn().Str("ID是！", s.ID()).Str("数据是：", str).Msg("我来了，很猛！readData")
+
+	// }
+
+}
+func (node *Node) handleStream(s network.Stream) {
+	log.Println("Got a new stream!__ from %s", s.ID())
+	utils.Logger().Debug().Str("ID is ", s.ID()).
+		Msg("————————————————Got a new stream!")
+	// Create a buffer stream for non blocking read and write.
+	rw := bufio.NewReadWriter(bufio.NewReader(s), bufio.NewWriter(s))
+	node.readData(rw, s)
+	// stream 's' will stay open until you close it (or the other side closes it).
+}
 
 // Start kicks off the node message handling
 func (node *Node) Start() error {
@@ -600,6 +696,9 @@ func (node *Node) Start() error {
 		}
 	}
 	pubsub := node.host.PubSub()
+	utils.Logger().Info().
+		Msg("构建单独通讯")
+	node.host.GetP2PHost().SetStreamHandler("/chat/1.0.0", node.handleStream)
 	ownID := node.host.GetID()
 	errChan := make(chan withError, 100)
 
@@ -649,6 +748,11 @@ func (node *Node) Start() error {
 			topicNamed,
 			// this is the validation function called to quickly validate every p2p message
 			func(ctx context.Context, peer libp2p_peer.ID, msg *libp2p_pubsub.Message) libp2p_pubsub.ValidationResult {
+
+				// utils.Logger().Info().
+				// 	Str("topic", topicNamed).Str("peer ID is ", peer.String()).Str("data   length", string(msg.GetData())).
+				// 	Msg("here is a fast RegisterTopicValidator")
+
 				atomic.AddUint32(&node.NumP2PMessages, 1)
 				hmyMsg := msg.GetData()
 
@@ -731,6 +835,8 @@ func (node *Node) Start() error {
 					}
 					return libp2p_pubsub.ValidationAccept
 				default:
+					utils.Logger().Info().Str("peer ID is ", msg.GetFrom().String()).
+						Msg("!!!!!!!!!!!ignore 444    garbled message")
 					// ignore garbled messages
 					atomic.AddUint32(&node.NumIgnoredMessages, 1)
 					return libp2p_pubsub.ValidationReject
@@ -762,7 +868,9 @@ func (node *Node) Start() error {
 		); err != nil {
 			return err
 		}
-
+		// utils.Logger().Info().
+		// 	Str("topic", topicNamed).
+		// 	Msg("here is a fast RegisterTopicValidator ending")
 		semConsensus := semaphore.NewWeighted(p2p.SetAsideForConsensus)
 		msgChanConsensus := make(chan validated, MsgChanBuffer)
 
