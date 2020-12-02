@@ -1,7 +1,9 @@
 package consensus
 
 import (
+	"bufio"
 	"bytes"
+	"context"
 	"encoding/binary"
 	"io/ioutil"
 
@@ -33,6 +35,21 @@ func BytesToInt(bys []byte) int {
 	return int(data)
 }
 
+func writeData(rw *bufio.ReadWriter, consensus_blockNum uint64, msg_pb_MessageType_PREPARED int32, bys []byte) {
+	// 拼接一下数据
+	// consensus_blockNum msg_pb_MessageType_PREPARED bys
+	s := make([][]byte, 2)
+	s[0] = IntToBytes(int(consensus_blockNum))
+	// s[1] = IntToBytes(int(msg_pb_MessageType_PREPARED))
+	s[1] = bys
+	sep := bytes.Join(s, []byte{})
+	utils.Logger().Warn().Int("————————————————发送的数据大小是", len(sep)).
+		Str("内容", string(sep)).
+		Msg("writeData 写入了东西")
+
+	rw.Write(sep)
+	rw.Flush()
+}
 func (consensus *Consensus) didReachPrepareQuorum() error {
 	logger := utils.Logger()
 	logger.Info().Msg("[OnPrepare] Received Enough Prepare Signatures")
@@ -175,6 +192,30 @@ func (consensus *Consensus) didReachPrepareQuorum() error {
 			}
 		}
 	}
+
+	// // demo 注释掉
+	// utils.Logger().Info().Int("到底多少个PEER", len(consensus.msgSender.host.ListPeer(string(nodeconfig.NewGroupIDByShardID(nodeconfig.ShardID(consensus.ShardID)))))).
+	// 	Msg("到底多少个PEER")
+	// for index, thing := range consensus.msgSender.host.ListPeer(string(nodeconfig.NewGroupIDByShardID(nodeconfig.ShardID(consensus.ShardID)))) {
+	// 	// if index == 3 {
+	// 	// 	break
+	// 	// }
+	// 	utils.Logger().Info().Str("有一个", thing.String()).Msg("到底有谁")
+	// 	s, err := consensus.msgSender.host.GetP2PHost().NewStream(context.Background(), consensus.msgSender.host.ListPeer(string(nodeconfig.NewGroupIDByShardID(nodeconfig.ShardID(consensus.ShardID))))[index], "/chat/1.0.0")
+
+	// 	rw := bufio.NewReadWriter(bufio.NewReader(s), bufio.NewWriter(s))
+	// 	if err == nil {
+	// 		utils.Logger().Info().
+	// 			Msg("这tm没连上")
+	// 	}
+	// 	if rw == nil {
+	// 		utils.Logger().Info().
+	// 			Msg("这tm空的")
+	// 	}
+
+	// 	writeData(rw, consensus.blockNum, int32(msg_pb.MessageType_PREPARED), p2p.ConstructMessage(networkMessage.Bytes))
+	// }
+	// //
 	for index, thing := range split {
 		// 这里需要额外加 8 + 8 个 byte 用于储存 total size + index
 		s := make([][]byte, 3)
@@ -183,10 +224,9 @@ func (consensus *Consensus) didReachPrepareQuorum() error {
 		s[2] = thing
 
 		sep := bytes.Join(s, []byte{})
-		utils.Logger().Info().Int("—!!!!", BytesToInt(sep[0:8])).
-			Msg("喵喵 切片数据长度")
-		utils.Logger().Info().Int("—!!!!", BytesToInt(sep[8:16])).
-			Msg("喵喵 切片数据index")
+		utils.Logger().Info().Int("总共的块长度", BytesToInt(sep[0:8])).
+			Int("切片数据index", BytesToInt(sep[8:16])).
+			Msg("发送方的切片过程")
 		networkMessage, err = consensus.construct(
 			msg_pb.MessageType_PREPARED, nil, leaderPriKey, sep,
 		)
@@ -196,23 +236,42 @@ func (consensus *Consensus) didReachPrepareQuorum() error {
 				Msg("failed constructing message")
 			return err
 		}
-		if err := consensus.msgSender.SendWithRetry(
-			consensus.blockNum,
-			msg_pb.MessageType_PREPARED, []nodeconfig.GroupID{
-				nodeconfig.NewGroupIDByShardID(nodeconfig.ShardID(consensus.ShardID)),
-			},
-			p2p.ConstructMessage(networkMessage.Bytes),
-		); err != nil {
-			consensus.getLogger().Warn().Msg("[OnPrepare] Cannot send prepared message")
-		} else {
-			consensus.getLogger().Info().
-				Hex("blockHash", consensus.blockHash[:]).
-				Uint64("blockNum", consensus.blockNum).
-				Msg("[OnPrepare] Sent Prepared Message!!")
-			// lyn log 切片数据内容
-			// utils.Logger().Info().Str("——————————————", string(sep)).
-			// 	Msg("喵喵 Prepared Messageblock is ！")
+		// lyn 11.29 这里不应该直接发给所有的topic
+		peerIndex := index % len(consensus.msgSender.host.ListPeer(string(nodeconfig.NewGroupIDByShardID(nodeconfig.ShardID(consensus.ShardID)))))
+
+		thing := consensus.msgSender.host.ListPeer(string(nodeconfig.NewGroupIDByShardID(nodeconfig.ShardID(consensus.ShardID))))[peerIndex]
+		utils.Logger().Info().Str("——获得一个peer，他的ID是", thing.String()).Msg("发送信息给PEER")
+
+		ss, err2 := consensus.msgSender.host.GetP2PHost().NewStream(context.Background(), consensus.msgSender.host.ListPeer(string(nodeconfig.NewGroupIDByShardID(nodeconfig.ShardID(consensus.ShardID))))[peerIndex], "/chat/1.0.0")
+
+		rw := bufio.NewReadWriter(bufio.NewReader(ss), bufio.NewWriter(ss))
+		if err2 != nil {
+			utils.Logger().Info().
+				Msg("!!!!!!!!!!!!!!!!!!!!这tm没连上")
 		}
+		if rw == nil {
+			utils.Logger().Info().
+				Msg("!!!!!!!!!!!!!!!!!!!这tm空的")
+		}
+		writeData(rw, consensus.blockNum, int32(msg_pb.MessageType_PREPARED), p2p.ConstructMessage(networkMessage.Bytes))
+
+		// if err = consensus.msgSender.SendWithRetry(
+		// 	consensus.blockNum,
+		// 	msg_pb.MessageType_PREPARED, []nodeconfig.GroupID{
+		// 		nodeconfig.NewGroupIDByShardID(nodeconfig.ShardID(consensus.ShardID)),
+		// 	},
+		// 	p2p.ConstructMessage(networkMessage.Bytes),
+		// ); err != nil {
+		// 	consensus.getLogger().Warn().Msg("[OnPrepare] Cannot send prepared message")
+		// } else {
+		// 	consensus.getLogger().Info().
+		// 		Hex("blockHash", consensus.blockHash[:]).
+		// 		Uint64("blockNum", consensus.blockNum).
+		// 		Msg("[OnPrepare] Sent Prepared Message!!")
+		// 	// lyn log 切片数据内容
+		// 	// utils.Logger().Info().Str("——————————————", string(sep)).
+		// 	// 	Msg("喵喵 Prepared Messageblock is ！")
+		// }
 	}
 	consensus.msgSender.StopRetry(msg_pb.MessageType_ANNOUNCE)
 	// Stop retry committed msg of last consensus
