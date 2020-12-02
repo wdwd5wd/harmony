@@ -63,9 +63,13 @@ func (consensus *Consensus) HandleMessageUpdate(ctx context.Context, msg *msg_pb
 	case t == msg_pb.MessageType_PREPARED && intendedForValidator:
 		if !bytes.Equal(senderKey[:], consensus.LeaderPubKey.Bytes[:]) &&
 			consensus.current.Mode() == Normal && !consensus.IgnoreViewIDCheck.IsSet() {
+
+			consensus.getLogger().Warn().Msg("!!!!!!!!!!!!!!!! errSenderPubKeyNotLeader")
 			return errSenderPubKeyNotLeader
 		}
 		if !consensus.senderKeySanityChecks(msg, senderKey) {
+
+			consensus.getLogger().Warn().Msg("!!!!!!!!!!!!!!!! errVerifyMessageSignature")
 			return errVerifyMessageSignature
 		}
 		// here will on prepare linyer
@@ -97,9 +101,9 @@ func (consensus *Consensus) HandleMessageUpdate(ctx context.Context, msg *msg_pb
 			return errVerifyMessageSignature
 		}
 		consensus.onNewView(msg)
-		//lyn log
-		// default:
-		// 	consensus.getLogger().Warn().Msg("this is default messgage in consensus")
+	//lyn log
+	default:
+		consensus.getLogger().Warn().Msg("!!!!!!!!!!!!!this is default messgage in consensus")
 	}
 
 	return nil
