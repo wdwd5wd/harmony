@@ -139,6 +139,21 @@ type Consensus struct {
 	globalBlockSliceCnt int
 }
 
+// GetShardId get the msgsender
+func (consensus *Consensus) GetShardId() uint32 {
+	return consensus.ShardID
+}
+
+// GetMsgSender get the msgsender
+func (consensus *Consensus) GetMsgSender() *MessageSender {
+	return consensus.msgSender
+}
+
+// GetblockNum get the blockNum
+func (consensus *Consensus) GetblockNum() uint64 {
+	return consensus.blockNum
+}
+
 // SetCommitDelay sets the commit message delay.  If set to non-zero,
 // validator delays commit message by the amount.
 func (consensus *Consensus) SetCommitDelay(delay time.Duration) {
