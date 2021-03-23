@@ -38,10 +38,11 @@ const (
 	SyncLoopFrequency               = 1    // unit in second
 	LastMileBlocksSize              = 50
 
+	// 我改了？
 	// after cutting off a number of connected peers, the result number of peers
 	// shall be between numPeersLowBound and numPeersHighBound
-	NumPeersLowBound  = 3
-	numPeersHighBound = 5
+	NumPeersLowBound  = 16
+	numPeersHighBound = 20
 
 	downloadTaskBatch = 30
 )

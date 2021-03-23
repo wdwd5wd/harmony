@@ -236,4 +236,28 @@ type Header interface {
 	// SetSlashes sets the RLP-encoded form of slashes
 	// It stores a copy; the caller may freely modify the original.
 	SetSlashes(newSlashes []byte)
+
+	// /////////modified from
+
+	// // ReceiptHashDetail is all the outgoing txs in the block
+	// ReceiptHashDetail() []common.Hash
+
+	// // SetReceiptHashDetail sets the outgoing txs in the block
+	// SetReceiptHashDetail(newReceiptHash []common.Hash)
+	// // ReceiptHashtoShard is root of outgoing txs to each shard
+	// ReceiptHashtoShard() []common.Hash
+	// // SetReceiptHashtoShard sets root of outgoing txs to each shard
+	// SetReceiptHashtoShard(newReceiptHash []common.Hash)
+	// // ReceipttoShardID asdas
+	// ReceipttoShardID() []uint32
+
+	// // SetReceipttoShardID sets the same-shard transaction receipt trie hash.
+	// SetReceipttoShardID(shardID []uint32)
+
+	// // ReceipttoShardIDDetail return the toshard id of each outgoingtxs
+	// ReceipttoShardIDDetail() []uint32
+
+	// // SetReceipttoShardIDDetail sets the toshard id of each outgoingtxs
+	// SetReceipttoShardIDDetail(shardID []uint32)
+	// /////////modified stop
 }

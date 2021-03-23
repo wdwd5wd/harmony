@@ -25,6 +25,10 @@ const (
 	vdfAndSeedSize  = 548 // size of VDF/Proof and Seed
 )
 
+// 我改了，用于erasure coding
+const SliceCnt = 30
+const ParityCnt = 2
+
 var errLeaderPriKeyNotFound = errors.New("getting leader private key from consensus public keys failed")
 
 // Consensus is the main struct with all states and data related to consensus process.
@@ -133,6 +137,11 @@ type Consensus struct {
 	finality int64
 	// finalityCounter keep tracks of the finality time
 	finalityCounter int64
+	// 我改了，用于erasure coding区块切片
+	// globalBlockSlice store the pieces of divided block
+	globalBlockSlice [][]byte
+	// globalBlockSlice store the number of pieces that we have get this preparing process
+	globalBlockSliceCnt int
 }
 
 // SetCommitDelay sets the commit message delay.  If set to non-zero,
@@ -221,5 +230,8 @@ func New(
 	// channel for receiving newly generated VDF
 	consensus.RndChannel = make(chan [vdfAndSeedSize]byte)
 	consensus.IgnoreViewIDCheck = abool.NewBool(false)
+	// lyn改了
+	consensus.globalBlockSlice = make([][]byte, ParityCnt+SliceCnt)
+	consensus.globalBlockSliceCnt = 0
 	return &consensus, nil
 }

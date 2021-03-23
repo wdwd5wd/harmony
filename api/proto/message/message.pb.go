@@ -8,14 +8,15 @@ package message
 
 import (
 	context "context"
+	reflect "reflect"
+	sync "sync"
+
 	proto "github.com/golang/protobuf/proto"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	reflect "reflect"
-	sync "sync"
 )
 
 const (
@@ -103,6 +104,8 @@ const (
 	MessageType_DRAND_COMMIT MessageType = 11
 	// Deprecated: Do not use.
 	MessageType_LOTTERY_REQUEST MessageType = 12 // it should be either ENTER or GETPLAYERS but it will be removed later.
+	// used to send erasure-code
+	MessageType_PREPARE_SCLICE MessageType = 13
 )
 
 // Enum value maps for MessageType.

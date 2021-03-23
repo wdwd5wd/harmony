@@ -146,7 +146,19 @@ type CXReceiptsProof struct {
 	Header       *block.Header
 	CommitSig    []byte
 	CommitBitmap []byte
+	// AdditionInfo []byte
 }
+
+// 凑个行数 其实被抛弃了
+// CXReceiptsProofV2 carrys the cross shard receipts and merkle proofV2
+// type CXReceiptsProofV2 struct {
+// 	Receipts     CXReceipts
+// 	AdditionInfo []byte
+// 	MerkleProof  *CXMerkleProof
+// 	Header       *block.Header
+// 	CommitSig    []byte
+// 	CommitBitmap []byte
+// }
 
 // Copy makes a deep copy of the receiver.
 func (cxp *CXReceiptsProof) Copy() *CXReceiptsProof {
@@ -158,6 +170,18 @@ func (cxp *CXReceiptsProof) Copy() *CXReceiptsProof {
 		CommitBitmap: append(cxp.CommitBitmap[:0:0], cxp.CommitSig...),
 	}
 }
+
+// 凑个行数 其实被抛弃了
+// Transfer from V2 to original
+// func (cxp *CXReceiptsProofV2) Transfer() *CXReceiptsProof {
+// 	return &CXReceiptsProof{
+// 		Receipts:     cxp.Receipts.Copy(),
+// 		MerkleProof:  cxp.MerkleProof.Copy(),
+// 		Header:       CopyHeader(cxp.Header),
+// 		CommitSig:    append(cxp.CommitSig[:0:0], cxp.CommitSig...),
+// 		CommitBitmap: append(cxp.CommitBitmap[:0:0], cxp.CommitSig...),
+// 	}
+// }
 
 // CXReceiptsProofs is a list of CXReceiptsProof
 type CXReceiptsProofs []*CXReceiptsProof
@@ -224,3 +248,14 @@ func (cxp *CXReceiptsProof) ContainsEmptyField() bool {
 	anyZero := len(cxp.CommitSig)+len(cxp.CommitBitmap) == 0
 	return anyNil || anyZero
 }
+
+// 凑个行数 其实被抛弃了
+// ContainsEmptyFieldV2 checks whether the given CXReceiptsProof contains empty field
+// func (cxp *CXReceiptsProofV2) ContainsEmptyFieldV2() bool {
+// 	anyNil := cxp == nil ||
+// 		cxp.Receipts == nil ||
+// 		cxp.MerkleProof == nil ||
+// 		cxp.Header == nil
+// 	anyZero := len(cxp.CommitSig)+len(cxp.CommitBitmap) == 0
+// 	return anyNil || anyZero
+// }

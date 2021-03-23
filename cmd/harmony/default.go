@@ -82,7 +82,8 @@ var defaultLogContext = logContext{
 }
 
 var defaultConsensusConfig = consensusConfig{
-	MinPeers: 6,
+	// 我改了？
+	MinPeers: 16,
 }
 
 const (

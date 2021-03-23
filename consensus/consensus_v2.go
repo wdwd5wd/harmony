@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/hex"
+	"fmt"
 	"sync/atomic"
 	"time"
 
@@ -37,6 +38,8 @@ func (consensus *Consensus) HandleMessageUpdate(ctx context.Context, msg *msg_pb
 	// in order to avoid possible trap forever but drop PREPARE and COMMIT
 	// which are message types specifically for a node acting as leader
 	// so we just ignore those messages
+	//lyn log
+	//consensus.getLogger().Warn().Msg("this is HandleMessageUpdate")
 	if consensus.IsViewChangingMode() &&
 		(msg.Type == msg_pb.MessageType_PREPARE ||
 			msg.Type == msg_pb.MessageType_COMMIT) {
@@ -94,6 +97,9 @@ func (consensus *Consensus) HandleMessageUpdate(ctx context.Context, msg *msg_pb
 			return errVerifyMessageSignature
 		}
 		consensus.onNewView(msg)
+		//lyn log
+		// default:
+		// 	consensus.getLogger().Warn().Msg("this is default messgage in consensus")
 	}
 
 	return nil
@@ -178,6 +184,8 @@ func (consensus *Consensus) finalizeCommits() {
 		Int("numTxns", len(block.Transactions())).
 		Int("numStakingTxns", len(block.StakingTransactions())).
 		Msg("HOORAY!!!!!!! CONSENSUS REACHED!!!!!!!")
+
+	fmt.Println("Shard,", consensus.ShardID, ", EndTime,", time.Now().UnixNano())
 
 	// Sleep to wait for the full block time
 	consensus.getLogger().Info().Msg("[finalizeCommits] Waiting for Block Time")
@@ -488,8 +496,8 @@ func (consensus *Consensus) Start(
 					Int64("publicKeys", consensus.Decider.ParticipantsCount()).
 					Msg("[ConsensusMainLoop] STARTING CONSENSUS")
 				// 我改了
-				// consensus.announce(newBlock)
-				consensus.PreannounceDIY(newBlock)
+				consensus.announce(newBlock)
+				// consensus.PreannounceDIY(newBlock)
 				// consensus.AnnounceDIY(newBlock)
 
 			case viewID := <-consensus.commitFinishChan:
@@ -502,8 +510,8 @@ func (consensus *Consensus) Start(
 					defer consensus.mutex.Unlock()
 					if viewID == consensus.GetCurBlockViewID() {
 						// 我改了
-						consensus.finalizeCommitsDIY()
-						// consensus.finalizeCommits()
+						// consensus.finalizeCommitsDIY()
+						consensus.finalizeCommits()
 					}
 				}()
 

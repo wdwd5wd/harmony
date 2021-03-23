@@ -95,6 +95,7 @@ func NewHost(self *Peer, key libp2p_crypto.PrivKey) (Host, error) {
 		// libp2p_pubsub.WithPeerOutboundQueueSize(64),
 		libp2p_pubsub.WithPeerOutboundQueueSize(131072),
 		// WithValidateWorkers sets the number of synchronous validation worker goroutines. Defaults to NumCPU.
+		// libp2p_pubsub.WithValidateWorkers(runtime.NumCPU() * 2),
 		libp2p_pubsub.WithValidateWorkers(runtime.NumCPU() * 2),
 		// WithValidateThrottle sets the upper bound on the number of active validation goroutines across all topics. The default is 8192.
 		libp2p_pubsub.WithValidateThrottle(MaxMessageHandlers),
@@ -121,6 +122,12 @@ func NewHost(self *Peer, key libp2p_crypto.PrivKey) (Host, error) {
 				Msg("can't add event tracer from P2P_TRACEFILE")
 		}
 	}
+
+	// 我改了
+	// libp2p_pubsub.GossipSubD = 16
+	// libp2p_pubsub.GossipSubDlo = 14
+	// libp2p_pubsub.GossipSubDhi = 18
+	// libp2p_pubsub.GossipSubDout = 8
 
 	pubsub, err := libp2p_pubsub.NewGossipSub(ctx, p2pHost, options...)
 	if err != nil {

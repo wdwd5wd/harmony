@@ -14,7 +14,7 @@ import (
 
 // construct is the single creation point of messages intended for the wire.
 func (consensus *Consensus) constructDIY(
-	p msg_pb.MessageType, payloadForSign []byte, priKey *bls.PrivateKeyWrapper,
+	p msg_pb.MessageType, payloadForSign []byte, priKey *bls.PrivateKeyWrapper, blockslice ...[]byte,
 ) (*NetworkMessage, error) {
 	message := &msg_pb.Message{
 		ServiceType: msg_pb.ServiceType_CONSENSUS,
@@ -62,6 +62,13 @@ func (consensus *Consensus) constructDIY(
 		consensusMsg.Payload = buffer.Bytes()
 	case msg_pb.MessageType_ANNOUNCE:
 		consensusMsg.Block = consensus.block
+		// erasure coding需要
+		if len(blockslice) != 0 {
+			// lyn log
+			// utils.Logger().Info().
+			// 	Msg("用切好的block片段替换之前的完整block")
+			consensusMsg.Block = blockslice[0]
+		}
 
 		consensusMsg.Payload = consensus.blockHash[:]
 	}

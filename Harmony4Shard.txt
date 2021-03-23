@@ -1,0 +1,11 @@
+bash ./test/multi-debug.sh
+net.ipv4.tcp_fin_timeout = 3
+net.ipv4.tcp_timestamps = 1
+net.ipv4.tcp_tw_reuse = 1
+net.ipv4.ip_local_port_range = 10000
+building ./cmd/harmony
+Harmony (C) 2020. harmony, version v6391-v2.3.7-34-ga071a8d5-dirty (ubuntu@ 2020-12-02T05:19:19+0000)
+building ./cmd/bootnode
+~/go/src/github.com/harmony-one/harmony/bin ~/go/src/github.com/harmony-one/harmony
+~/go/src/github.com/harmony-one/harmony
+Makefile:60: recipe for target 'multi-debug' failed

@@ -517,8 +517,8 @@ func New(
 	// 我改了
 	// worker.gasFloor = 80000000
 	// worker.gasCeil = 120000000
-	worker.gasFloor = 88800000
-	worker.gasCeil = 88800000 + 8880000
+	worker.gasFloor = 170880000
+	worker.gasCeil = 170880000 + 17088000
 
 	parent := worker.chain.CurrentBlock()
 	num := parent.Number()

@@ -3,6 +3,7 @@ package node
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"math/rand"
 	"time"
 
@@ -368,6 +369,10 @@ func (node *Node) PostConsensusProcessing(
 		Uint64("blockNum", newBlock.NumberU64()).
 		Str("hash", newBlock.Header().Hash().Hex()).
 		Msg("Added New Block to Blockchain!!!")
+
+	if node.Consensus.IsLeader() {
+		fmt.Println("Shard,", node.Consensus.ShardID, ", InsertEndTime,", time.Now().UnixNano())
+	}
 
 	node.Consensus.FinishFinalityCount()
 

@@ -3,6 +3,7 @@ package consensus
 import (
 	"bytes"
 	"encoding/hex"
+	"io/ioutil"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -11,7 +12,9 @@ import (
 	"github.com/harmony-one/harmony/consensus/signature"
 	"github.com/harmony-one/harmony/core/types"
 	nodeconfig "github.com/harmony-one/harmony/internal/configs/node"
+	"github.com/harmony-one/harmony/internal/utils"
 	"github.com/harmony-one/harmony/p2p"
+	"github.com/klauspost/reedsolomon"
 )
 
 func (consensus *Consensus) onAnnounceDIY(msg *msg_pb.Message) {
@@ -87,6 +90,63 @@ ViewIDcheck:
 
 	// check validity of block
 	var blockObj types.Block
+	// ***************************************************************************
+	// 因为erasure coding，需要对接收到的碎片进行拼接
+	// lyn log 打印出现在收到的块片段数据
+	// utils.Logger().Info().Str("-------------------", string(recvMsg.Block)).
+	// 	Msg("喵喵 DecodeBytes")
+
+	totalLen := BytesToInt(recvMsg.Block[0:8])     //原始块长度
+	comingIndex := BytesToInt(recvMsg.Block[8:16]) //来的片段的下标
+	//已经拼接过了block，不需要再收信息了
+	if consensus.globalBlockSliceCnt == SliceCnt {
+		return
+	}
+	// 没来过的片才会往里加
+	if consensus.globalBlockSlice[comingIndex] == nil {
+		consensus.globalBlockSlice[comingIndex] = recvMsg.Block[16:]
+		consensus.globalBlockSliceCnt = consensus.globalBlockSliceCnt + 1
+		utils.Logger().Info().Int("totalLen", totalLen).Int("comingIndex", comingIndex).
+			Msg("here is one slice of block")
+
+		//没有达到10个片则不作额外验证，等着收其他的片
+		if consensus.globalBlockSliceCnt != SliceCnt {
+			return
+		} else {
+			//拼接
+			utils.Logger().Info().
+				Msg("现在收到了所有片 尝试拼接")
+			b1 := new(bytes.Buffer)
+			// if consensus.globalBlockSlice[9] == nil {
+			// 	utils.Logger().Info().
+			// 		Msg("before100000000000000000 nillllllllllll")
+			// 	// return
+			// }
+			enc, err := reedsolomon.New(SliceCnt, ParityCnt)
+			err = enc.ReconstructData(consensus.globalBlockSlice)
+			// if consensus.globalBlockSlice[9] == nil {
+			// 	utils.Logger().Info().
+			// 		Msg("after100000000000000000 nillllllllllll")
+			// 	// return
+			// }
+			if err != nil {
+				utils.Logger().Info().
+					Msg("拼接出现错误！！ReconstructData")
+				return
+			}
+			err = enc.Join(b1, consensus.globalBlockSlice, totalLen)
+			readBuf, _ := ioutil.ReadAll(b1)
+			recvMsg.Block = readBuf
+			if err != nil {
+				utils.Logger().Info().
+					Msg("拼接出现错误！！一般不会出现这个情况！")
+				return
+			}
+
+		}
+	}
+	// ***************************************************************************
+
 	if err := rlp.DecodeBytes(recvMsg.Block, &blockObj); err != nil {
 		consensus.getLogger().Warn().
 			Err(err).
@@ -459,6 +519,11 @@ func (consensus *Consensus) onCommittedDIY(msg *msg_pb.Message) {
 		consensus.getLogger().Debug().Msg("[OnCommitted] Start consensus timer")
 	}
 	consensus.consensusTimeout[timeoutConsensus].Start()
+
+	// 因为erasure coding，清空切片
+	consensus.getLogger().Debug().Msg("[OnCommitted] 重置区块切片")
+	consensus.globalBlockSlice = make([][]byte, SliceCnt+ParityCnt)
+	consensus.globalBlockSliceCnt = 0
 
 	// consensus.getLogger().Debug().Msg("SEND commitFinishSig")
 	// consensus.commitFinishSig <- struct{}{}

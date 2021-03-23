@@ -122,8 +122,7 @@ function launch_localnet() {
     esac
 
     # Start the node
-    # trickle -s -d 2560 -u 2560 
-    ${DRYRUN} "${ROOT}/bin/harmony" "${args[@]}" "${extra_args[@]}" 2>&1 | tee -a "${LOG_FILE}" &
+    trickle -s -d 2560 -u 2560 ${DRYRUN} "${ROOT}/bin/harmony" "${args[@]}" "${extra_args[@]}" 2>&1 | tee -a "${LOG_FILE}" &
   done <"${config}"
 }
 

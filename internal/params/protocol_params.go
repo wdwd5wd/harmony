@@ -13,7 +13,7 @@ const (
 	// TestGenesisGasLimit ..
 	// 我改了
 	// TestGenesisGasLimit uint64 = 80000000 // A Gas limit in testing of the Genesis block (set same as current mainnet)
-	TestGenesisGasLimit uint64 = 88800000 // A Gas limit in testing of the Genesis block (set same as current mainnet)
+	TestGenesisGasLimit uint64 = 170880000 // A Gas limit in testing of the Genesis block (set same as current mainnet)
 	// MaximumExtraDataSize ...
 	MaximumExtraDataSize uint64 = 32 // Maximum size extra data may be after Genesis.
 	// ExpByteGas ...

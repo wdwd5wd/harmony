@@ -13,8 +13,8 @@ import (
 const (
 	// 我改了
 	//MaxPoolTransactionDataSize is a 128KB heuristic data limit for DOS prevention
-	MaxPoolTransactionDataSize = 128 * 1024
-	// MaxPoolTransactionDataSize = 128 * 1024 * 1024
+	// MaxPoolTransactionDataSize = 128 * 1024
+	MaxPoolTransactionDataSize = 128 * 1024 * 1024
 	//MaxEncodedPoolTransactionSize is a heuristic raw/encoded data size limit. It has an additional 10KB for metadata
 	MaxEncodedPoolTransactionSize = MaxPoolTransactionDataSize + (10 * 1024)
 )

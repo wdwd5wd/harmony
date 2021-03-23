@@ -203,7 +203,7 @@ func (consensus *Consensus) tryCatchupDIY() {
 }
 
 func (consensus *Consensus) finalizeCommitsDIY() {
-	fmt.Println("Shard,", consensus.ShardID, "BroadcastEndTime,", time.Now().UnixNano())
+	fmt.Println("Shard,", consensus.ShardID, ", BroadcastEndTime,", time.Now().UnixNano())
 
 	consensus.getLogger().Info().
 		Int64("NumCommits", consensus.Decider.SignersCount(quorum.Commit)).
@@ -266,7 +266,7 @@ func (consensus *Consensus) finalizeCommitsDIY() {
 
 		consensus.getLogger().Info().Msg("[finalizeCommits] Waiting Block Time Done")
 
-		fmt.Println("Shard,", consensus.ShardID, "RoundTime,", time.Now().UnixNano())
+		fmt.Println("Shard,", consensus.ShardID, ", RoundTime,", time.Now().UnixNano())
 	}()
 
 	consensus.tryCatchupDIY()
@@ -300,5 +300,5 @@ func (consensus *Consensus) finalizeCommitsDIY() {
 		Int("numStakingTxns", len(block.StakingTransactions())).
 		Msg("HOORAY!!!!!!! CONSENSUS REACHED!!!!!!!")
 
-	fmt.Println("Shard,", consensus.ShardID, "EndTime,", time.Now().UnixNano())
+	fmt.Println("Shard,", consensus.ShardID, ", EndTime,", time.Now().UnixNano())
 }

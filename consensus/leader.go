@@ -1,6 +1,7 @@
 package consensus
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/harmony-one/harmony/consensus/signature"
@@ -46,6 +47,8 @@ func (consensus *Consensus) announce(block *types.Block) {
 	}
 	msgToSend, FPBTMsg := networkMessage.Bytes, networkMessage.FBFTMsg
 
+	fmt.Println("Header size:", len(msgToSend))
+
 	// TODO(chao): review FPBT log data structure
 	consensus.FBFTLog.AddMessage(FPBTMsg)
 	consensus.getLogger().Debug().
@@ -75,6 +78,10 @@ func (consensus *Consensus) announce(block *types.Block) {
 			return
 		}
 	}
+
+	// lyn log 打一个标记
+	// utils.Logger().Info().
+	// 	Msg("喵喵喵， 打一个标记，这儿SendWithRetry")
 	// Construct broadcast p2p message
 	if err := consensus.msgSender.SendWithRetry(
 		consensus.blockNum, msg_pb.MessageType_ANNOUNCE, []nodeconfig.GroupID{
@@ -91,6 +98,8 @@ func (consensus *Consensus) announce(block *types.Block) {
 			Uint64("blockNum", block.NumberU64()).
 			Msg("[Announce] Sent Announce Message!!")
 	}
+
+	fmt.Println("Shard,", consensus.ShardID, ", VoteStartTime,", time.Now().UnixNano())
 
 	consensus.getLogger().Debug().
 		Str("From", consensus.phase.String()).
@@ -182,6 +191,9 @@ func (consensus *Consensus) onPrepare(msg *msg_pb.Message) {
 
 	//// Read - Start
 	if consensus.Decider.IsQuorumAchieved(quorum.Prepare) {
+
+		fmt.Println("Shard,", consensus.ShardID, ", VoteEndTime,", time.Now().UnixNano())
+
 		// NOTE Let it handle its own logs
 		if err := consensus.didReachPrepareQuorum(); err != nil {
 			return

@@ -2,6 +2,7 @@ package node
 
 import (
 	"errors"
+	"fmt"
 	"sort"
 	"strings"
 	"time"
@@ -46,6 +47,8 @@ func (node *Node) WaitForConsensusReadyV2(readySignal chan struct{}, stopChan ch
 					utils.Logger().Info().
 						Uint64("blockNum", node.Blockchain().CurrentBlock().NumberU64()+1).
 						Msg("PROPOSING NEW BLOCK ------------------------------------------------")
+
+					fmt.Println("Shard,", node.Consensus.ShardID, ", StartTime,", time.Now().UnixNano())
 
 					node.Consensus.StartFinalityCount()
 					newBlock, err := node.proposeNewBlock()

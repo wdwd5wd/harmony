@@ -1,12 +1,15 @@
 package consensus
 
 import (
+	"bytes"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/harmony-one/harmony/consensus/signature"
 	nodeconfig "github.com/harmony-one/harmony/internal/configs/node"
 	"github.com/harmony-one/harmony/internal/utils"
+	"github.com/klauspost/reedsolomon"
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/harmony-one/bls/ffi/go/bls"
@@ -15,6 +18,8 @@ import (
 	"github.com/harmony-one/harmony/core/types"
 	"github.com/harmony-one/harmony/p2p"
 )
+
+var wg sync.WaitGroup
 
 // PreannounceDIY 把一些需要信息先打包
 func (consensus *Consensus) PreannounceDIY(newBlock *types.Block) {
@@ -67,7 +72,7 @@ func (consensus *Consensus) AnnounceDIY(block *types.Block) {
 			Msg("failed constructing message")
 		return
 	}
-	msgToSend, FPBTMsg := networkMessage.Bytes, networkMessage.FBFTMsg
+	FPBTMsg := networkMessage.FBFTMsg
 
 	// TODO(chao): review FPBT log data structure
 	consensus.FBFTLog.AddMessage(FPBTMsg)
@@ -111,24 +116,80 @@ func (consensus *Consensus) AnnounceDIY(block *types.Block) {
 		}
 	}
 
-	// Construct broadcast p2p message
-	if err := consensus.msgSender.SendWithRetry(
-		consensus.blockNum, msg_pb.MessageType_ANNOUNCE, []nodeconfig.GroupID{
-			nodeconfig.NewGroupIDByShardID(nodeconfig.ShardID(consensus.ShardID)),
-		}, p2p.ConstructMessage(msgToSend)); err != nil {
-		consensus.getLogger().Warn().
-			Str("groupID", string(nodeconfig.NewGroupIDByShardID(
-				nodeconfig.ShardID(consensus.ShardID),
-			))).
-			Msg("[Announce] Cannot send announce message")
-	} else {
-		consensus.getLogger().Info().
-			Str("blockHash", block.Hash().Hex()).
-			Uint64("blockNum", block.NumberU64()).
-			Msg("[Announce] Sent Announce Message!!")
-	}
+	// lyn here 切分block
+	utils.Logger().Info().
+		Msg("______________leader尝试切分数据")
+	// utils.Logger().Info().Int("喵喵,原始block数据长度", len(consensus.block)).Msg("长度")
+	enc, err := reedsolomon.New(SliceCnt, ParityCnt)
+	split, err := enc.Split(consensus.block)
+	err = enc.Encode(split)
 
-	fmt.Println("Shard,", consensus.ShardID, "BroadcastStartTime,", time.Now().UnixNano())
+	// // 直接合并出原始数据用于测试
+	// b1 := new(bytes.Buffer)
+	// err = enc.Join(b1, split, len(consensus.block))
+	// if err != nil {
+	// 	utils.Logger().Info().
+	// 		Msg("erasure-code过程出错 join函数出现了错误返回")
+	// }
+	// readbuf, _ := ioutil.ReadAll(b1)
+	// if len(readbuf) != len(consensus.block) {
+	// 	utils.Logger().Info().
+	// 		Msg("______________长度不一样")
+	// } else {
+	// 	for index := range readbuf {
+	// 		if readbuf[index] != consensus.block[index] {
+	// 			utils.Logger().Info().
+	// 				Msg("______________内容不一样")
+	// 		}
+	// 	}
+	// }
+
+	wg.Add(SliceCnt + ParityCnt)
+	networkMessageDIY := make([]*NetworkMessage, SliceCnt+ParityCnt)
+	for index, thing := range split {
+
+		// 这里需要额外加 8 + 8 个 byte 用于储存 total size + index
+		s := make([][]byte, 3)
+		s[0] = IntToBytes(len(consensus.block))
+		s[1] = IntToBytes(index)
+		s[2] = thing
+
+		sep := bytes.Join(s, []byte{})
+		// utils.Logger().Info().Int("—!!!!", BytesToInt(sep[0:8])).
+		// 	Msg("喵喵 切片数据长度")
+		// utils.Logger().Info().Int("—!!!!", BytesToInt(sep[8:16])).
+		// 	Msg("喵喵 切片数据index")
+		networkMessageDIY[index], err = consensus.constructDIY(msg_pb.MessageType_ANNOUNCE, nil, key, sep)
+		if err != nil {
+			consensus.getLogger().Err(err).
+				Str("message-type", msg_pb.MessageType_ANNOUNCE.String()).
+				Msg("failed constructing message")
+			return
+		}
+
+		go func(index int) {
+			// Construct broadcast p2p message
+			if err := consensus.msgSender.SendWithRetry(
+				consensus.blockNum, msg_pb.MessageType_ANNOUNCE, []nodeconfig.GroupID{
+					nodeconfig.NewGroupIDByShardID(nodeconfig.ShardID(consensus.ShardID)),
+				}, p2p.ConstructMessage(networkMessageDIY[index].Bytes)); err != nil {
+				consensus.getLogger().Warn().
+					Str("groupID", string(nodeconfig.NewGroupIDByShardID(
+						nodeconfig.ShardID(consensus.ShardID),
+					))).
+					Msg("[Announce] Cannot send announce message")
+			} else {
+				consensus.getLogger().Info().
+					Str("blockHash", block.Hash().Hex()).
+					Uint64("blockNum", block.NumberU64()).
+					Msg("[Announce] Sent Announce Message!!")
+			}
+			wg.Done()
+		}(index)
+	}
+	wg.Wait()
+
+	fmt.Println("Shard,", consensus.ShardID, ", BroadcastStartTime,", time.Now().UnixNano())
 
 	consensus.getLogger().Debug().
 		Str("From", consensus.phase.String()).
@@ -152,7 +213,7 @@ func (consensus *Consensus) AnnounceDIY(block *types.Block) {
 
 	go func() {
 		// 等待广播结束
-		time.Sleep(10 * time.Second)
+		time.Sleep(3000 * time.Millisecond)
 
 		// 直接让leader生产下一个块
 		// Send signal to Node to propose the new block for consensus
@@ -166,6 +227,7 @@ func (consensus *Consensus) AnnounceDIY(block *types.Block) {
 
 }
 
+// 好像没用
 func (consensus *Consensus) onPrepareDIY(msg *msg_pb.Message) {
 	recvMsg, err := ParseFBFTMessage(msg)
 	if err != nil {

@@ -59,7 +59,7 @@ func (node *Node) BroadcastCXReceiptsWithShardID(block *types.Block, commitSig [
 			Msg("[CXMerkleProof] No receipts found for the destination shard")
 		return
 	}
-
+	//CXMerkleProof函数内部和toshard 无关
 	merkleProof, err := node.Blockchain().CXMerkleProof(toShardID, block)
 	if err != nil {
 		utils.Logger().Warn().
@@ -67,13 +67,22 @@ func (node *Node) BroadcastCXReceiptsWithShardID(block *types.Block, commitSig [
 			Msg("[BroadcastCXReceiptsWithShardID] Unable to get merkleProof")
 		return
 	}
-
+	// ///// 这里可以给cxReceiptsProof 增加负载
+	// tmpOverload := func(num int) []byte {
+	// 	buf := bytes.NewBuffer([]byte{})
+	// 	tmp := uint32(num)
+	// 	binary.Write(buf, binary.BigEndian, tmp)
+	// 	return buf.Bytes()
+	// }(233) //test
+	// tmpOverload = []byte{}
+	// ////
 	cxReceiptsProof := &types.CXReceiptsProof{
 		Receipts:     cxReceipts,
 		MerkleProof:  merkleProof,
 		Header:       block.Header(),
 		CommitSig:    commitSig,
 		CommitBitmap: commitBitmap,
+		// AdditionInfo: tmpOverload,
 	}
 
 	groupID := nodeconfig.NewGroupIDByShardID(nodeconfig.ShardID(toShardID))

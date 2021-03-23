@@ -458,6 +458,8 @@ func (node *Node) validateShardBoundMessage(
 	atomic.AddUint32(&node.NumTotalMessages, 1)
 
 	if err := protobuf.Unmarshal(payload, &m); err != nil {
+		utils.Logger().Info().Str("payload", string(payload)).
+			Msg("here is error in Unmarshal")
 		atomic.AddUint32(&node.NumInvalidMessages, 1)
 		return nil, nil, true, errors.WithStack(err)
 	}
@@ -647,6 +649,9 @@ func (node *Node) Start() error {
 				atomic.AddUint32(&node.NumP2PMessages, 1)
 				hmyMsg := msg.GetData()
 
+				// 我改了，增加延迟以模拟网络延迟
+				// time.Sleep(100 * time.Millisecond)
+
 				// first to validate the size of the p2p message
 				if len(hmyMsg) < p2pMsgPrefixSize {
 					// TODO (lc): block peers sending empty messages
@@ -661,6 +666,8 @@ func (node *Node) Start() error {
 
 					// received consensus message in non-consensus bound topic
 					if !isConsensusBound {
+						// utils.Logger().Debug().
+						// 	Msg("1")
 						errChan <- withError{
 							errors.WithStack(errConsensusMessageOnUnexpectedTopic), msg,
 						}
@@ -673,6 +680,8 @@ func (node *Node) Start() error {
 					)
 
 					if err != nil {
+						// utils.Logger().Debug().
+						// 	Msg("2")
 						errChan <- withError{err, msg.GetFrom()}
 						return libp2p_pubsub.ValidationReject
 					}
@@ -685,8 +694,8 @@ func (node *Node) Start() error {
 					msg.ValidatorData = validated{
 						consensusBound: true,
 						// 我改了
-						handleC: node.Consensus.HandleMessageUpdateDIY,
-						// handleC:      node.Consensus.HandleMessageUpdate,
+						// handleC: node.Consensus.HandleMessageUpdateDIY,
+						handleC:      node.Consensus.HandleMessageUpdate,
 						handleCArg:   validMsg,
 						senderPubKey: senderPubKey,
 					}
@@ -708,6 +717,8 @@ func (node *Node) Start() error {
 							return libp2p_pubsub.ValidationAccept
 						default:
 							// TODO (lc): block peers sending error messages
+							// utils.Logger().Debug().
+							// 	Msg("3")
 							errChan <- withError{err, msg.GetFrom()}
 							return libp2p_pubsub.ValidationReject
 						}
@@ -731,6 +742,8 @@ func (node *Node) Start() error {
 						utils.Logger().Warn().
 							Str("topic", topicNamed).Msg("[context] exceeded validation deadline")
 					}
+					// utils.Logger().Debug().
+					// 	Msg("4")
 					errChan <- withError{errors.WithStack(ctx.Err()), nil}
 				default:
 					return libp2p_pubsub.ValidationAccept
@@ -769,10 +782,14 @@ func (node *Node) Start() error {
 							if err := node.explorerMessageHandler(
 								ctx, msg.handleCArg,
 							); err != nil {
+								// utils.Logger().Debug().
+								// 	Msg("5")
 								errChan <- withError{err, nil}
 							}
 						} else {
 							if err := msg.handleC(ctx, msg.handleCArg, msg.senderPubKey); err != nil {
+								// utils.Logger().Debug().
+								// 	Msg("6")
 								errChan <- withError{err, nil}
 							}
 						}
@@ -784,6 +801,8 @@ func (node *Node) Start() error {
 							utils.Logger().Warn().
 								Str("topic", topicNamed).Msg("[context] exceeded consensus message handler deadline")
 						}
+						// utils.Logger().Debug().
+						// 	Msg("7")
 						errChan <- withError{errors.WithStack(ctx.Err()), nil}
 					default:
 						return
@@ -807,6 +826,8 @@ func (node *Node) Start() error {
 						defer semNode.Release(1)
 
 						if err := msg.handleE(ctx, msg.handleEArg, msg.actionType); err != nil {
+							// utils.Logger().Debug().
+							// 	Msg("8")
 							errChan <- withError{err, nil}
 						}
 					}
@@ -817,6 +838,8 @@ func (node *Node) Start() error {
 							utils.Logger().Warn().
 								Str("topic", topicNamed).Msg("[context] exceeded node message handler deadline")
 						}
+						// utils.Logger().Debug().
+						// 	Msg("9")
 						errChan <- withError{errors.WithStack(ctx.Err()), nil}
 					default:
 						return
@@ -830,6 +853,8 @@ func (node *Node) Start() error {
 			for {
 				nextMsg, err := sub.Next(context.Background())
 				if err != nil {
+					// utils.Logger().Debug().
+					// 	Msg("10")
 					errChan <- withError{errors.WithStack(err), nil}
 					continue
 				}
